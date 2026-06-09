@@ -1,0 +1,61 @@
+<svg width="400" height="130" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .border-box { fill: none; stroke: #38bdf8; stroke-width: 2.5; rx: 8; }
+    .shape-circle { fill: none; stroke: #f43f5e; stroke-width: 2; }
+    .shape-triangle { fill: none; stroke: #38bdf8; stroke-width: 2; stroke-linejoin: round; }
+    .shape-square { fill: none; stroke: #eab308; stroke-width: 2; }
+    .tick { stroke: #f43f5e; stroke-width: 3; stroke-linecap: round; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; text-anchor: middle; }
+    .qmark { fill: #c084fc; font-size: 28px; font-family: system-ui, -apple-system, sans-serif; font-weight: 900; text-anchor: middle; }
+  </style>
+
+  <!-- Frame 1 -->
+  <g transform="translate(10, 10)">
+    <rect width="80" height="80" class="border-box"/>
+    <!-- Center is 40, 40 -->
+    <!-- Outer Circle: radius 30. Tick mark rotated 45 deg (from top) -->
+    <circle cx="40" cy="40" r="30" class="shape-circle"/>
+    <line x1="40" y1="10" x2="40" y2="5" class="tick" transform="rotate(45, 40, 40)"/>
+    <!-- Middle Triangle: rotated 90 deg counter-clockwise (pointing left) -->
+    <polygon points="40,20 22,50 58,50" class="shape-triangle" transform="rotate(-90, 40, 40)"/>
+    <!-- Inner Square: rotated 0 deg -->
+    <rect x="30" y="30" width="20" height="20" class="shape-square"/>
+    
+    <text x="40" y="105" class="label">ภาพที่ 1</text>
+  </g>
+
+  <!-- Frame 2 -->
+  <g transform="translate(110, 10)">
+    <rect width="80" height="80" class="border-box"/>
+    <!-- Outer Circle: Tick rotated 90 deg -->
+    <circle cx="40" cy="40" r="30" class="shape-circle"/>
+    <line x1="40" y1="10" x2="40" y2="5" class="tick" transform="rotate(90, 40, 40)"/>
+    <!-- Middle Triangle: rotated 180 deg counter-clockwise (pointing down) -->
+    <polygon points="40,20 22,50 58,50" class="shape-triangle" transform="rotate(-180, 40, 40)"/>
+    <!-- Inner Square: rotated 45 deg -->
+    <rect x="30" y="30" width="20" height="20" class="shape-square" transform="rotate(45, 40, 40)"/>
+
+    <text x="40" y="105" class="label">ภาพที่ 2</text>
+  </g>
+
+  <!-- Frame 3 -->
+  <g transform="translate(210, 10)">
+    <rect width="80" height="80" class="border-box"/>
+    <!-- Outer Circle: Tick rotated 135 deg -->
+    <circle cx="40" cy="40" r="30" class="shape-circle"/>
+    <line x1="40" y1="10" x2="40" y2="5" class="tick" transform="rotate(135, 40, 40)"/>
+    <!-- Middle Triangle: rotated 270 deg counter-clockwise (pointing right) -->
+    <polygon points="40,20 22,50 58,50" class="shape-triangle" transform="rotate(-270, 40, 40)"/>
+    <!-- Inner Square: rotated 90 deg -->
+    <rect x="30" y="30" width="20" height="20" class="shape-square" transform="rotate(90, 40, 40)"/>
+
+    <text x="40" y="105" class="label">ภาพที่ 3</text>
+  </g>
+
+  <!-- Frame 4 (Question) -->
+  <g transform="translate(310, 10)">
+    <rect width="80" height="80" class="border-box" style="stroke: #c084fc; stroke-dasharray: 5 5;"/>
+    <text x="40" y="50" class="qmark">?</text>
+    <text x="40" y="105" class="label">ภาพที่ 4</text>
+  </g>
+</svg>

@@ -1,0 +1,40 @@
+<svg width="400" height="130" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+  <!-- Style -->
+  <style>
+    .box { fill: #1e293b; stroke: #38bdf8; stroke-width: 2.5; rx: 10; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; text-anchor: middle; }
+    .arrow { fill: none; stroke: #f43f5e; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .qmark { fill: #eab308; font-size: 28px; font-family: system-ui, -apple-system, sans-serif; font-weight: 900; text-anchor: middle; }
+  </style>
+
+  <!-- Box 1 -->
+  <g transform="translate(10, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Arrow pointing right (→) at top-right corner -->
+    <path class="arrow" d="M 50,20 L 70,20 M 64,14 L 70,20 L 64,26" />
+    <text x="40" y="105" class="label">ภาพที่ 1</text>
+  </g>
+
+  <!-- Box 2 -->
+  <g transform="translate(110, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Arrow pointing down (↓) at bottom-right corner -->
+    <path class="arrow" d="M 60,50 L 60,70 M 54,64 L 60,70 L 66,64" />
+    <text x="40" y="105" class="label">ภาพที่ 2</text>
+  </g>
+
+  <!-- Box 3 -->
+  <g transform="translate(210, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Arrow pointing left (←) at bottom-left corner -->
+    <path class="arrow" d="M 30,60 L 10,60 M 16,54 L 10,60 L 16,66" />
+    <text x="40" y="105" class="label">ภาพที่ 3</text>
+  </g>
+
+  <!-- Box 4 (Question) -->
+  <g transform="translate(310, 10)">
+    <rect class="box" width="80" height="80" style="stroke: #c084fc; stroke-dasharray: 5 5;"/>
+    <text x="40" y="50" class="qmark">?</text>
+    <text x="40" y="105" class="label">ภาพที่ 4</text>
+  </g>
+</svg>

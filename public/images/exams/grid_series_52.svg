@@ -1,0 +1,76 @@
+<svg width="400" height="130" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .border-box { fill: none; stroke: #38bdf8; stroke-width: 2.5; rx: 8; }
+    .cell-bg { fill: #1e293b; stroke: #475569; stroke-width: 1; }
+    .cell-active { fill: #94a3b8; stroke: #38bdf8; stroke-width: 1.5; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; text-anchor: middle; }
+    .qmark { fill: #eab308; font-size: 28px; font-family: system-ui, -apple-system, sans-serif; font-weight: 900; text-anchor: middle; }
+  </style>
+
+  <!-- Macro for Grid Helper: Row-Col positions: C1: 6, C2: 29, C3: 52 | R1: 6, R2: 29, R3: 52 -->
+
+  <!-- Frame 1 -->
+  <g transform="translate(10, 10)">
+    <rect class="cell-bg" x="6" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="52" width="20" height="20"/>
+    <!-- Active 1: Top-Left (6, 6) -->
+    <rect class="cell-active" x="6" y="6" width="20" height="20"/>
+    <!-- Active 2: Bottom-Right (52, 52) -->
+    <rect class="cell-active" x="52" y="52" width="20" height="20"/>
+    
+    <rect class="border-box" width="80" height="80"/>
+    <text x="40" y="105" class="label">ภาพที่ 1</text>
+  </g>
+
+  <!-- Frame 2 -->
+  <g transform="translate(110, 10)">
+    <rect class="cell-bg" x="6" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="52" width="20" height="20"/>
+    <!-- Active 1: Top-Middle (29, 6) -->
+    <rect class="cell-active" x="29" y="6" width="20" height="20"/>
+    <!-- Active 2: Bottom-Middle (29, 52) -->
+    <rect class="cell-active" x="29" y="52" width="20" height="20"/>
+
+    <rect class="border-box" width="80" height="80"/>
+    <text x="40" y="105" class="label">ภาพที่ 2</text>
+  </g>
+
+  <!-- Frame 3 -->
+  <g transform="translate(210, 10)">
+    <rect class="cell-bg" x="6" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="6" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="29" width="20" height="20"/>
+    <rect class="cell-bg" x="6" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="29" y="52" width="20" height="20"/>
+    <rect class="cell-bg" x="52" y="52" width="20" height="20"/>
+    <!-- Overlapping Active at Center (29, 29) -->
+    <rect class="cell-active" x="29" y="29" width="20" height="20"/>
+
+    <rect class="border-box" width="80" height="80"/>
+    <text x="40" y="105" class="label">ภาพที่ 3</text>
+  </g>
+
+  <!-- Frame 4 (Question) -->
+  <g transform="translate(310, 10)">
+    <rect class="border-box" width="80" height="80" style="stroke: #c084fc; stroke-dasharray: 5 5;"/>
+    <text x="40" y="50" class="qmark">?</text>
+    <text x="40" y="105" class="label">ภาพที่ 4</text>
+  </g>
+</svg>

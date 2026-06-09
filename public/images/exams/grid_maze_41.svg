@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="200">
+  <rect x="0" y="0" width="200" height="200" fill="#0f172a" rx="8"/>
+  
+  <!-- Grid background cells -->
+  <!-- Row 2 (y=2) -->
+  <rect x="40" y="40" width="40" height="40" fill="none" stroke="#334155"/>
+  <rect x="80" y="40" width="40" height="40" fill="#ef4444" opacity="0.3" stroke="#ef4444"/> <!-- Obstacle (1,2) -->
+  <rect x="120" y="40" width="40" height="40" fill="none" stroke="#334155"/>
+  
+  <!-- Row 1 (y=1) -->
+  <rect x="40" y="80" width="40" height="40" fill="none" stroke="#334155"/>
+  <rect x="80" y="80" width="40" height="40" fill="#ef4444" opacity="0.3" stroke="#ef4444"/> <!-- Obstacle (1,1) -->
+  <rect x="120" y="80" width="40" height="40" fill="#ef4444" opacity="0.3" stroke="#ef4444"/> <!-- Obstacle (2,1) -->
+  
+  <!-- Row 0 (y=0) -->
+  <rect x="40" y="120" width="40" height="40" fill="none" stroke="#334155"/>
+  <rect x="80" y="120" width="40" height="40" fill="none" stroke="#334155"/>
+  <rect x="120" y="120" width="40" height="40" fill="none" stroke="#334155"/>
+  
+  <!-- Grid Coordinate Labels -->
+  <!-- X labels -->
+  <text x="60" y="175" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">X=0</text>
+  <text x="100" y="175" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">X=1</text>
+  <text x="140" y="175" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">X=2</text>
+  
+  <!-- Y labels -->
+  <text x="20" y="143" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">Y=0</text>
+  <text x="20" y="103" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">Y=1</text>
+  <text x="20" y="63" font-family="sans-serif" font-size="8" fill="#94a3b8" text-anchor="middle">Y=2</text>
+  
+  <!-- Obstacle labels (Red crosses) -->
+  <text x="100" y="65" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ef4444" text-anchor="middle">❌</text>
+  <text x="100" y="105" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ef4444" text-anchor="middle">❌</text>
+  <text x="140" y="105" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ef4444" text-anchor="middle">❌</text>
+  
+  <!-- Start Node (0,0) -> cell centered at (60, 140) -->
+  <circle cx="60" cy="140" r="12" fill="#22c55e"/>
+  <text x="60" y="143" font-family="sans-serif" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">Start</text>
+  
+  <!-- Goal Node (2,2) -> cell centered at (140, 60) -->
+  <circle cx="140" cy="60" r="12" fill="#3b82f6"/>
+  <text x="140" y="63" font-family="sans-serif" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">Goal</text>
+  
+  <text x="100" y="25" font-family="sans-serif" font-size="10" font-weight="bold" fill="#e2e8f0" text-anchor="middle">แผนผังเขาวงกต (Maze Grid)</text>
+</svg>

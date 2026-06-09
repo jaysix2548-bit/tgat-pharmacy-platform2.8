@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+/* =======================================================
+   1. TAILWIND V4 PREMIUM SaaS THEME CONFIGURATION
+   ======================================================= */
+@theme {
+  --font-sans: var(--font-line-seed), "LINE Seed Sans TH", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-line-seed), "LINE Seed Sans TH", sans-serif;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+
+  --color-success-500: #22c55e;
+  --color-warning-500: #f59e0b;
+  --color-danger-500: #ef4444;
+
+  --color-background: #050b14;
+  --color-surface: #0b1220;
+  --color-card: #111827;
+  --color-border: rgba(255, 255, 255, 0.08);
+
+  /* Map old aggressive neon theme variables to premium SaaS colors */
+  --color-neon-blue: #3b82f6;
+  --color-neon-purple: #8b5cf6;
+  --color-neon-orange: #f59e0b;
+}
+
+/* =======================================================
+   2. GLOBAL BASE STYLES & NATURAL INHERITANCE
+   ======================================================= */
+
+@layer base {
+  :root {
+    --background: #050b14;
+    --foreground: #f8fafc;
+    --card: #111827;
+    --card-foreground: #f8fafc;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-line-seed), "LINE Seed Sans TH", sans-serif;
+    font-size: 18px;
+    line-height: 1.75;
+    /* Improve vertical reading flow */
+    @apply transition-colors duration-300 antialiased;
+  }
+
+  p {
+    color: #cbd5e1; /* Comfortable slate-300 body text site-wide */
+    letter-spacing: 0.01em; /* Elegant breathing room */
+  }
+
+  /* Basic form elements inherit body font automatically */
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+}
+
+/* =======================================================
+   3. SAAS PREMIUM CARD & LAYOUT UTILITIES
+   ======================================================= */
+@utility saas-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+
+  @media (min-width: 768px) {
+    padding: 32px;
+  }
+}
+
+@utility saas-card-hover {
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@utility section-container {
+  padding-top: 80px;
+  padding-bottom: 80px;
+
+  @media (min-width: 768px) {
+    padding-top: 120px;
+    padding-bottom: 120px;
+  }
+}
+
+/* =======================================================
+   4. TYPOGRAPHY DESIGN SYSTEM TOKEN CLASSES
+   ======================================================= */
+@utility heading-xl {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+@utility heading-lg {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+@utility heading-md {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+@utility text-small {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+@utility exam-passage {
+  background-color: rgba(2, 6, 23, 0.6);
+  /* bg-slate-950/60 */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  /* border-white/5 */
+  border-radius: 20px;
+  /* rounded-2xl */
+  padding: 16px;
+  /* Mobile responsive padding (p-4) */
+  margin-bottom: 24px;
+  /* mb-6 */
+
+  @media (min-width: 768px) {
+    padding: 24px;
+    /* Desktop padding (md:p-6) */
+  }
+
+  & p,
+  & {
+    color: #cbd5e1;
+    /* Soft light gray text */
+    font-size: 18px;
+    font-weight: 400;
+    /* Regular weight (400) */
+    line-height: 1.6;
+    /* 1.6 line height for reading flow */
+    letter-spacing: 0.01em;
+    /* Subtle horizontal breathing room */
+    max-width: 70ch;
+    /* Bounded width (max 70 characters per line) */
+  }
+
+  & p:not(:last-child) {
+    margin-bottom: 1.5rem;
+    /* Spacious margins between paragraphs */
+  }
+
+  & h1,
+  & h2,
+  & h3,
+  & h4,
+  & h5,
+  & h6 {
+    color: rgba(255, 255, 255, 0.95);
+    /* Slightly brighter headings */
+    font-weight: 600;
+    /* Semi-bold */
+    line-height: 1.3;
+    letter-spacing: normal;
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+  }
+}
+
+
+/* =======================================================
+   5. PREMIUM SaaS BUTTON SYSTEM
+   ======================================================= */
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  cursor: pointer;
+
+  &:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 20px;
+  background-color: transparent;
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

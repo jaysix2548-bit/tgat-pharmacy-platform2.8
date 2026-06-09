@@ -1,0 +1,29 @@
+<svg width="140" height="180" viewBox="20 0 140 180" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .label { fill: #000; font-size: 14px; font-family: system-ui, -apple-system, sans-serif; font-weight: 800; text-anchor: middle; }
+    .border { stroke: #38bdf8; stroke-width: 2; rx: 4; }
+  </style>
+  
+  <!-- Net Layout -->
+  <!-- Row 1: Col 2 (W) -->
+  <rect x="70" y="10" width="40" height="40" fill="#ffffff" class="border"/>
+  <text x="90" y="35" class="label" style="fill: #0f172a;">W</text>
+  
+  <!-- Row 2: Col 1 (R), Col 2 (G), Col 3 (B) -->
+  <rect x="30" y="50" width="40" height="40" fill="#f43f5e" class="border"/>
+  <text x="50" y="75" class="label" style="fill: #ffffff;">R</text>
+
+  <rect x="70" y="50" width="40" height="40" fill="#10b981" class="border"/>
+  <text x="90" y="75" class="label" style="fill: #ffffff;">G</text>
+
+  <rect x="110" y="50" width="40" height="40" fill="#3b82f6" class="border"/>
+  <text x="130" y="75" class="label" style="fill: #ffffff;">B</text>
+
+  <!-- Row 3: Col 2 (K) -->
+  <rect x="70" y="90" width="40" height="40" fill="#1e293b" class="border"/>
+  <text x="90" y="115" class="label" style="fill: #ffffff;">K</text>
+
+  <!-- Row 4: Col 2 (Y) -->
+  <rect x="70" y="130" width="40" height="40" fill="#eab308" class="border"/>
+  <text x="90" y="155" class="label" style="fill: #0f172a;">Y</text>
+</svg>

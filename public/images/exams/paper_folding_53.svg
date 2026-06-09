@@ -1,0 +1,55 @@
+<svg width="400" height="130" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .sheet { fill: #1e293b; stroke: #38bdf8; stroke-width: 2; rx: 4; }
+    .fold-line { stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 4 4; }
+    .arrow { fill: none; stroke: #eab308; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .punch { fill: #f43f5e; stroke: none; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; text-anchor: middle; }
+    .arrow-next { fill: none; stroke: #475569; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+
+  <!-- Step 1: Original Square -->
+  <g transform="translate(10, 20)">
+    <rect class="sheet" width="60" height="60"/>
+    <text x="30" y="85" class="label">1. เริ่มต้น</text>
+  </g>
+
+  <!-- Arrow to Step 2 -->
+  <path class="arrow-next" d="M 80,50 L 95,50 M 90,45 L 95,50 L 90,55" />
+
+  <!-- Step 2: Fold up -->
+  <g transform="translate(105, 20)">
+    <rect class="sheet" width="60" height="60"/>
+    <!-- Fold line at y: 30 -->
+    <line class="fold-line" x1="0" y1="30" x2="60" y2="30"/>
+    <!-- Arrow pointing up -->
+    <path class="arrow" d="M 30,50 L 30,15 M 25,23 L 30,15 L 35,23" />
+    <text x="30" y="85" class="label">2. พับขึ้น</text>
+  </g>
+
+  <!-- Arrow to Step 3 -->
+  <path class="arrow-next" d="M 175,50 L 190,50 M 185,45 L 190,50 L 185,55" />
+
+  <!-- Step 3: Fold right -->
+  <g transform="translate(200, 20)">
+    <!-- Folded half: 60x30 at top -->
+    <rect class="sheet" width="60" height="30"/>
+    <!-- Fold line at x: 30 -->
+    <line class="fold-line" x1="30" y1="0" x2="30" y2="30"/>
+    <!-- Arrow pointing right -->
+    <path class="arrow" d="M 15,15 L 45,15 M 37,10 L 45,15 L 37,20" />
+    <text x="30" y="85" class="label">3. พับขวา</text>
+  </g>
+
+  <!-- Arrow to Step 4 -->
+  <path class="arrow-next" d="M 270,50 L 285,50 M 280,45 L 285,50 L 280,55" />
+
+  <!-- Step 4: Small square with punch hole -->
+  <g transform="translate(295, 20)">
+    <!-- Quarter size: 30x30 -->
+    <rect class="sheet" x="30" y="0" width="30" height="30"/>
+    <!-- Punch hole at bottom edge center (45, 30) -->
+    <circle class="punch" cx="45" cy="30" r="5"/>
+    <text x="30" y="85" class="label">4. เจาะรู</text>
+  </g>
+</svg>

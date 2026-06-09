@@ -1,0 +1,44 @@
+<svg width="250" height="240" viewBox="0 0 250 240" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .face { fill: #1e293b; stroke: #38bdf8; stroke-width: 2.5; }
+    .mark { stroke: #f43f5e; stroke-width: 4; stroke-linecap: round; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; }
+  </style>
+
+  <!-- Row 1: Top Face (x: 100, y: 10) -->
+  <g transform="translate(100, 10)">
+    <rect class="face" width="50" height="50"/>
+    <!-- Line (/) from bottom-left (5, 45) to top-right (45, 5) -->
+    <line class="mark" x1="5" y1="45" x2="45" y2="5"/>
+  </g>
+
+  <!-- Row 2: Top-Middle Face (x: 100, y: 60) -->
+  <g transform="translate(100, 60)">
+    <rect class="face" width="50" height="50"/>
+  </g>
+
+  <!-- Row 3: Middle row (Left, Middle, Right) -->
+  <!-- Left Face (x: 50, y: 110) -->
+  <g transform="translate(50, 110)">
+    <rect class="face" width="50" height="50"/>
+  </g>
+  <!-- Middle Face (x: 100, y: 110) -->
+  <g transform="translate(100, 110)">
+    <rect class="face" width="50" height="50"/>
+    <!-- Horizontal Line (—) from (5, 25) to (45, 25) -->
+    <line class="mark" x1="5" y1="25" x2="45" y2="25"/>
+  </g>
+  <!-- Right Face (x: 150, y: 110) -->
+  <g transform="translate(150, 110)">
+    <rect class="face" width="50" height="50"/>
+  </g>
+
+  <!-- Row 4: Bottom Face (x: 100, y: 160) -->
+  <g transform="translate(100, 160)">
+    <rect class="face" width="50" height="50"/>
+    <!-- Line (\) from top-left (5, 5) to bottom-right (45, 45) -->
+    <line class="mark" x1="5" y1="5" x2="45" y2="45"/>
+  </g>
+
+  <text x="125" y="230" class="label" text-anchor="middle">แผ่นคลี่กล่องลูกบาศก์</text>
+</svg>

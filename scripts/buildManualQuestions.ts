@@ -1,0 +1,1679 @@
+import { loadEnvConfig } from '@next/env';
+import fs from 'fs';
+import path from 'path';
+import { getGoogleSheetsClient } from '../src/lib/googleSheets';
+
+const projectDir = process.cwd();
+loadEnvConfig(projectDir);
+
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+
+if (!SHEET_ID) {
+  console.error("❌ GOOGLE_SHEET_ID is missing in environment variables. Check .env.local");
+  process.exit(1);
+}
+
+interface TGAT1Question {
+  id: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  topic: string;
+  section: string;
+  partTitle: string;
+  suggestedTime: string;
+  estimatedTime: number;
+  frequency: string;
+  examWeight: number;
+  yearPattern: string;
+  text: string;
+  passage: string | null;
+  options: string[];
+  answer: number;
+  correctExplanation: string;
+  wrongExplanation: string;
+  mindset: string;
+  speedHack: string;
+}
+
+const questions: TGAT1Question[] = [
+  // --- PART 1: QUESTION-RESPONSE (Q1-Q10) ---
+  {
+    id: "T1-001",
+    difficulty: "Easy",
+    topic: "Daily Communication",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Speaker A: \"Excuse me, is this seat taken? I need to sit down for a moment.\"<br>Speaker B: \"______________________\"",
+    passage: null,
+    options: [
+      "No, not at all. Please go ahead.",
+      "Yes, I took it home yesterday.",
+      "I am sitting here, can't you see?",
+      "Seat number 12 is available near the door."
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 1 เป็นการตอบรับที่สุภาพและเป็นธรรมชาติที่สุดเมื่อมีคนถามว่าที่นั่งนี้มีคนจองหรือยัง (Is this seat taken?) โดย 'No, not at all. Please go ahead.' แปลว่า 'เปล่าครับ ไม่มีคนนั่ง เชิญตามสบายเลยครับ'",
+    wrongExplanation: "ข้อ 2 ตอบไม่ตรงคำถาม (ฉันเอามันกลับบ้านเมื่อวาน); ข้อ 3 ก้าวร้าวเกินไป (ฉันนั่งอยู่นี่ มองไม่เห็นเหรอ); ข้อ 4 เป็นการบอกข้อมูลเลขที่นั่งอื่นซึ่งไม่ตรงกับที่นั่งที่กำลังถามถึง",
+    mindset: "โจทย์ระดับ Easy ในส่วน Question-Response มักทดสอบความสุภาพทางสังคม (Social Politeness) และการตอบรับที่เป็นธรรมชาติ ไม่ก้าวร้าว และตรงประเด็น",
+    speedHack: "เมื่อได้ยินคำถาม 'Is this seat taken?' (ที่นั่งนี้มีคนนั่งไหม) คำตอบที่ยินยอมให้ยื่นที่นั่งให้มักจะขึ้นต้นด้วย 'No...' (ไม่ครับ/ไม่มีคนนั่ง) เสมอ"
+  },
+  {
+    id: "T1-002",
+    difficulty: "Easy",
+    topic: "Customer Service",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "A customer at a clinic reception desk:<br>Customer: \"Excuse me, my appointment was scheduled for 10:00 AM, and it is already 10:30 AM.\"<br>Receptionist: \"______________________\"",
+    passage: null,
+    options: [
+      "You should have arrived earlier to prevent this.",
+      "I apologize for the delay. The doctor is running slightly behind schedule today but will see you next.",
+      "Please complain to the manager at the front door.",
+      "We are very busy today, so you just have to wait."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ในฐานะพนักงานต้อนรับที่คลินิก เมื่อคนไข้ทักท้วงเรื่องนัดหมายล่าช้า การขออภัยอย่างสุภาพและอธิบายสถานการณ์พร้อมบอกวิธีแก้ไข (จะเรียกคิวถัดไป) คือการสื่อสารระดับสากลที่ดีที่สุด",
+    wrongExplanation: "ข้อ 1 เป็นการโทษคนไข้ (คุณควรมาเร็วกว่านี้); ข้อ 3 ปัดความรับผิดชอบให้ผู้จัดการ; ข้อ 4 ใช้น้ำเสียงแข็งกระด้างและขาดใจรักบริการ (Service mind)",
+    mindset: "ในสถานการณ์การบริการ (Service Scenarios) ให้มองหาตัวเลือกที่ยอมรับปัญหา ขออภัย (Apologize) และเสนอทางแก้หรือแจ้งสถานะล่าสุดอย่างสุภาพ",
+    speedHack: "ตัดตัวเลือกที่กล่าวโทษลูกค้า ปัดสอยความรับผิดชอบ หรือไล่ให้ไปรออย่างไร้จุดหมายออกทันที"
+  },
+  {
+    id: "T1-003",
+    difficulty: "Medium",
+    topic: "Workplace Interaction",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Manager: \"We need to submit the final inventory audit report by this evening, but the database is still offline.\"<br>Assistant: \"______________________\"",
+    passage: null,
+    options: [
+      "Let me retrieve the offline backup spreadsheet we saved yesterday and compile the report manually.",
+      "The IT department is always lazy and never fixes anything on time.",
+      "I will go home now and finish it tomorrow morning.",
+      "We should just submit an empty report to show we tried."
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 1 ในบริบทการทำงานเมื่อเกิดปัญหาเฉพาะหน้า (ฐานข้อมูลออฟไลน์) ทางเลือกที่ดีที่สุดคือเสนอแนวทางแก้ไขทดแทนที่เป็นรูปธรรมและแสดงความเป็นมืออาชีพ (ใช้ข้อมูลสำรองและรวบรวมด้วยมือ)",
+    wrongExplanation: "ข้อ 2 เป็นการบ่นและกล่าวโทษผู้อื่น (IT ขี้เกียจ) ไม่ช่วยให้งานสำเร็จ; ข้อ 3 ปฏิเสธงานและกลับบ้าน; ข้อ 4 ส่งรายงานเปล่าซึ่งถือเป็นการทำผิดจรรยาบรรณการทำงานอย่างร้ายแรง",
+    mindset: "ข้อสอบ TGAT มักชอบคำตอบเชิงบวกที่มุ่งเน้นการแก้ปัญหา (Solution-oriented) และมีความรับผิดชอบในการทำงานร่วมกัน",
+    speedHack: "มองหาคีย์เวิร์ดแก้ไขปัญหาเฉพาะหน้า เช่น 'backup', 'retrieve', 'manually' ซึ่งแสดงถึงการแก้ปัญหาอย่างมีประสิทธิภาพ"
+  },
+  {
+    id: "T1-004",
+    difficulty: "Easy",
+    topic: "Daily Communication",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Student: \"Excuse me, Dr. Sarah. Could you please clarify the reading requirements for next week's seminar?\"<br>Professor: \"______________________\"",
+    passage: null,
+    options: [
+      "Read everything you find on Google.",
+      "You should check the syllabus uploaded on the student portal; chapters 4 and 5 are mandatory.",
+      "I am too busy to answer this kind of basic question.",
+      "Don't worry about reading, just come to class."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อาจารย์ตอบคำถามนิสิตด้วยข้อมูลที่ชัดเจน ตรงประเด็น และอิงระบบจัดการเรียนการสอนที่เป็นมาตรฐาน (เช็คประมวลรายวิชาบนพอร์ทัลและระบุบทเรียน)",
+    wrongExplanation: "ข้อ 1 กว้างและขาดความเป็นวิชาการ (ให้อ่านทุกอย่างในกูเกิล); ข้อ 3 ปฏิเสธการตอบอย่างหยาบคาย; ข้อ 4 ละเลยความสำคัญของการเตรียมตัวสอบและอ่านหนังสือ",
+    mindset: "บทสนทนาระหว่างอาจารย์และนักศึกษาต้องการความช่วยเหลือทางวิชาการและแนวทางปฏิบัติที่ชัดเจนและมีโครงสร้าง",
+    speedHack: "เลือกข้อที่ให้ข้อมูลชี้เฉพาะ (Specific resource) เช่น 'syllabus', 'portal', 'chapters 4 and 5'"
+  },
+  {
+    id: "T1-005",
+    difficulty: "Medium",
+    topic: "Workplace Interaction",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Colleague A: \"Would you mind proofreading this marketing proposal before I send it to the board?\"<br>Colleague B: \"______________________\"",
+    passage: null,
+    options: [
+      "I don't think you are qualified to write proposals anyway.",
+      "I'd be glad to. Just give me about an hour to finish my current task first.",
+      "No, you should hire a professional translator to do your job.",
+      "Why should I do your work for free?"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เป็นการตอบตกลงช่วยเหลืออย่างมีมารยาท พร้อมจัดการเวลาของตนเองอย่างเหมาะสม (ยินดีช่วยแต่ขอเวลา 1 ชั่วโมงเพื่อเคลียร์งานเดิม)",
+    wrongExplanation: "ข้อ 1, 3 และ 4 แสดงถึงทัศนคติเชิงลบอย่างรุนแรง การดูแคลนเพื่อนร่วมงาน และการปฏิเสธอย่างไร้มารยาทซึ่งไม่ควรตอบในการสอบวัดทักษะการสื่อสาร",
+    mindset: "ทักษะความร่วมมือในที่ทำงาน (Collaboration) เป็นหัวใจสำคัญของข้อสอบ TGAT ช้อยส์ที่ถูกต้องจะแสดงความเป็นมิตร ความช่วยเหลือ และความยืดหยุ่นเชิงบวก",
+    speedHack: "ตัดช้อยส์ที่ตัดรอนความสัมพันธ์ หรือพูดจาเสียดสีเพื่อนร่วมงานออกทันที"
+  },
+  {
+    id: "T1-006",
+    difficulty: "Hard",
+    topic: "Conflict Resolution",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Speaker A: \"We've been debating this software update for three weeks, and we're still split down the middle. We need a decision today.\"<br>Speaker B: \"______________________\"",
+    passage: null,
+    options: [
+      "Let's just vote by secret ballot and let the majority win instantly.",
+      "Since we are deadlocked, let's list the top pros and cons of both options and let the department head make the final call based on our summary.",
+      "I suggest we postpone the decision for another month until we feel ready.",
+      "Whoever disagrees with my proposal can leave the meeting room right now."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ในสถานการณ์ทางตัน (deadlock) และมีความเร่งด่วน การใช้วิธีรวบรวมข้อดี-ข้อเสียอย่างเป็นระบบและส่งให้ผู้มีอำนาจตัดสินใจสุดท้ายทำหน้าที่ตัดสินโดยอิงข้อมูลเป็นทางออกที่ดีที่สุดในเชิงโครงสร้างองค์กร",
+    wrongExplanation: "ข้อ 1 การโหวตทันทีอาจละเลยความเสี่ยงทางเทคนิคที่สองฝ่ายโต้แย้งกัน; ข้อ 3 เป็นการประวิงเวลา (postpone) ซึ่งขัดแย้งกับโจทย์ที่ระบุว่าต้องการการตัดสินใจวันนี้; ข้อ 4 เผด็จการและก้าวร้าวเกินไป",
+    mindset: "โจทย์ระดับ Hard มักจำลองสถานการณ์ความขัดแย้งซับซ้อน คำตอบที่ดีที่สุดไม่ใช่การดึงดันเอาชนะ แต่เป็นการใช้กระบวนการทางปัญญาเชิงตรรกะประนีประนอมหรือส่งต่อปัญหาให้ระดับผู้บริหารอย่างเป็นระบบ",
+    speedHack: "สังเกตคีย์เวิร์ดแก้ปัญหาเชิงวิเคราะห์ เช่น 'list pros and cons', 'final call based on summary' ซึ่งจะเหนือกว่าการโหวตแบบผ่านๆ"
+  },
+  {
+    id: "T1-007",
+    difficulty: "Medium",
+    topic: "Pharmacy Consultation",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I bought this allergy medicine here last week, but it's making me so sleepy that I can't drive to work. Is there an alternative?\"<br>Pharmacist: \"______________________\"",
+    passage: null,
+    options: [
+      "You should stop driving to work while you are sick.",
+      "Yes, I can recommend a non-drowsy, second-generation antihistamine like loratadine instead.",
+      "All allergy medicines have the exact same ingredients, so there is no alternative.",
+      "You should drink a strong energy drink along with the pills."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรแนะนำทางเลือกยาแก้แพ้กลุ่มที่ไม่ทำให้ง่วงนอน (non-drowsy) ซึ่งก็คือกลุ่ม second-generation antihistamines (เช่น Loratadine) เพื่อแก้ปัญหาเรื่องความปลอดภัยในการขับขี่ทำงานของคนไข้ได้อย่างตรงจุดและอิงหลักวิชาการ",
+    wrongExplanation: "ข้อ 1 เป็นคำแนะนำที่ทำได้ยากในชีวิตจริงและไม่ใช่การแก้ปัญหาที่ตัวยา; ข้อ 3 ให้ข้อมูลทางการแพทย์ที่ผิดพลาดอย่างรุนแรง; ข้อ 4 แนะนำเครื่องดื่มชูกำลังร่วมกับยาซึ่งอาจเป็นอันตรายต่อระบบหัวใจและหลอดเลือด",
+    mindset: "สำหรับบทสนทนากับเภสัชกรหรือบุคลากรการแพทย์ คำแนะนำต้องถูกต้อง ปลอดภัย และอิงจากความรู้ด้านการเลือกยาและอาการข้างเคียง (side effects)",
+    speedHack: "มองหาคีย์เวิร์ดแก้ปัญหาเรื่องง่วงนอน ('sleepy') ด้วยการแนะนำ 'non-drowsy' หรือกลุ่มยาจำเฉพาะเสมอ"
+  },
+  {
+    id: "T1-008",
+    difficulty: "Easy",
+    topic: "Daily Communication",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Visitor: \"Excuse me, could you tell me how to get to the main library from this building?\"<br>Staff: \"______________________\"",
+    passage: null,
+    options: [
+      "It is too far for you to walk there.",
+      "Just walk straight out of this exit, turn left at the fountain, and you will see the large brick building on your right.",
+      "I don't work in the library, so I have no idea.",
+      "Why don't you search for it on your phone's map?"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 พนักงานให้ข้อมูลการเดินทางอย่างสุภาพ ละเอียด และเข้าใจง่าย (เดินตรงออกจากทางออก เลี้ยวซ้ายตรงน้ำพุ และจะเห็นตึกสีอิฐขวามือ)",
+    wrongExplanation: "ข้อ 1 ปฏิเสธการบอกทางโดยตัดสินไปเองว่าไกลเกินไป; ข้อ 3 และ 4 ปัดคำถามอย่างไม่มีมารยาทและขาดใจบริการ",
+    mindset: "การขอทิศทาง (Asking for Directions) ต้องได้รับคำตอบที่ระบุเส้นทางเชิงกายภาพที่ชัดเจน เป็นขั้นตอน และใช้คำสุภาพเป็นมิตร",
+    speedHack: "มองหาคำระบุทิศทางเชิงพิกัด เช่น 'walk straight', 'turn left', 'on your right'"
+  },
+  {
+    id: "T1-009",
+    difficulty: "Medium",
+    topic: "Pharmacy Consultation",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"I forgot to take my blood pressure pill this morning. Should I take a double dose tonight to catch up?\"<br>Pharmacist: \"______________________\"",
+    passage: null,
+    options: [
+      "No, you should never double the dose; just take your regular dose tonight and continue the normal schedule tomorrow.",
+      "Yes, that is a great way to make sure the drug levels stay high.",
+      "You should throw away the remaining bottles since you missed a day.",
+      "Double doses are fine as long as you eat a heavy dinner first."
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) ตามหลักวิชาการเภสัชกรรม หากคนไข้ลืมทานยาความดัน ไม่ควรทานเบิ้ลโดสเด็ดขาดเนื่องจากอาจทำให้ความดันโลหิตตกอย่างรุนแรง (Hypotension) และเป็นอันตรายได้ คำแนะนำมาตรฐานคือทานปกติในมื้อต่อไปและข้ามมื้อที่ลืมไปเลย",
+    wrongExplanation: "ข้อ 1 (ตัวเลือกสอง), 3 และ 4 ให้คำแนะนำทางการแพทย์ที่ผิดพลาดอย่างมากและเป็นอันตรายต่อชีวิตคนไข้",
+    mindset: "ประเด็นความปลอดภัยทางยา (Medication Safety) มีความสำคัญสูงสุดในการสื่อสารด้านสุขภาพ ห้ามเลือกช้อยส์ที่ยินยอมให้คนไข้เพิ่มโดสเองเด็ดขาด",
+    speedHack: "ตัดช้อยส์ที่สนับสนุนการทานยาแบบเบิ้ลโดส ('double dose') ออกทันทีเพื่อความปลอดภัยทางคลินิก"
+  },
+  {
+    id: "T1-010",
+    difficulty: "Hard",
+    topic: "Ethics & Regulation",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Question-Response)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I've been taking this sleeping pill for months. The doctor hasn't renewed my prescription, but I really need it tonight.\"<br>Pharmacist: \"______________________\"",
+    passage: null,
+    options: [
+      "Since it's just for one night, I can make an exception for you.",
+      "I understand you are having trouble sleeping, but this medication is strictly controlled and cannot be dispensed without a valid prescription. Let me contact your clinic for a refill authorization.",
+      "You should look for a pharmacy that does not follow the laws so strictly.",
+      "Just buy some alcohol to help you sleep instead."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรปฏิบัติตามกฎหมายควบคุมยาอย่างเคร่งครัดแต่ก็แสดงความเห็นอกเห็นใจ (Empathy) และพยายามหาทางออกช่วยเหลือคนไข้โดยระเบียบข้อกฎหมายวิชาชีพ (ประสานคลินิกเพื่อขอ refilled authorization)",
+    wrongExplanation: "ข้อ 1 เป็นการทำผิดกฎหมายร้ายแรงจ่ายยาควบคุมโดยไม่มีใบสั่ง; ข้อ 3 แนะนำช่องทางผิดกฎหมาย; ข้อ 4 แนะนำสิ่งที่เป็นอันตรายต่อสุขภาพคนไข้ในการนอนหลับ",
+    mindset: "ข้อสอบจริยธรรมสุขภาพ (Health Ethics) ต้องเลือกคำตอบที่ปลอดภัย ถูกต้องตามกฎหมาย แต่ยังแสดงความเกื้อกูลและเป็นมิตรกับผู้รับบริการ ไม่ตอบปฏิเสธเฉยๆ อย่างไม่มีเยื่อใย",
+    speedHack: "มองหาตัวเลือกที่ปฏิเสธอย่างมีหลักการทางกฎหมาย ('cannot be dispensed without prescription') ควบคู่กับการเสนอทางเลือกช่วยเหลือทางวิชาชีพ ('contact your clinic for authorization')"
+  },
+
+  // --- PART 1: SHORT CONVERSATIONS (Q11-Q22) ---
+  {
+    id: "T1-011",
+    difficulty: "Easy",
+    topic: "Pharmacy Consultation",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 35s",
+    estimatedTime: 35,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"How should I take this liquid antibiotic for my throat infection?\"<br>Pharmacist: \"First, shake the bottle well before using. ______________________.\"<br>Patient: \"Okay, I will make sure to use that instead of a regular spoon.\"",
+    passage: null,
+    options: [
+      "You can drink it directly from the bottle neck.",
+      "Always use the measured dosing syringe or cup provided in the box to ensure the correct dose.",
+      "Any kitchen spoon will be accurate enough for this medicine.",
+      "Mix the whole bottle in a glass of water before drinking."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรแนะนำวิธียาตวงยาที่ถูกต้องแม่นยำด้วยการใช้อุปกรณ์ตวงวัดที่มีมาให้ในกล่อง (dosing syringe/cup) ซึ่งสอดคล้องกับที่คนไข้บอกว่าจะใช้มันแทนช้อนแกงทั่วไป",
+    wrongExplanation: "ข้อ 1 และ 3 ขาดความแม่นยำและอาจทำให้ได้รับยาเกินขนาด (Overdose) หรือต่ำกว่าเกณฑ์การรักษา (Underdose); ข้อ 4 เป็นวิธีผสมยาที่ผิดทำให้ยาสลายตัวหรือไม่ได้รับยาตามกำหนด",
+    mindset: "ทักษะการใช้ยาอย่างปลอดภัยในเด็กและผู้ป่วยต้องการความละเอียดรอบคอบในการตวงวัดปริมาตรยา ช้อนโต๊ะอาหารทั่วไปไม่ควรนำมาใช้ตวงยา",
+    speedHack: "ความถูกต้องทางเทคนิคการแพทย์มักระบุอุปกรณ์ที่เฉพาะเจาะจง เช่น 'measuring syringe', 'dosing cup'"
+  },
+  {
+    id: "T1-012",
+    difficulty: "Medium",
+    topic: "Drug Interaction",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"Can I have a glass of wine at dinner while taking this prescription antibiotic (Metronidazole)?\"<br>Pharmacist: \"______________________. It can trigger a severe reaction causing flushing, rapid heart rate, and vomiting.\"<br>Patient: \"Good to know. I will stick to water and juice until I finish the course.\"",
+    passage: null,
+    options: [
+      "Yes, wine actually helps the antibiotic work faster.",
+      "I strongly advise against consuming any alcohol during this treatment and for at least 72 hours after finishing it.",
+      "A small glass is completely fine as long as you wait an hour before taking the pill.",
+      "Only red wine is forbidden, white wine is perfectly safe."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรเตือนข้อห้ามใช้ร่วมกันอย่างเด็ดขาดระหว่างยา Metronidazole และแอลกอฮอล์ เนื่องจากจะเกิดปฏิกิริยาคล้ายยาเลิกเหล้า (disulfiram-like reaction) ส่งผลให้หน้าแดง หัวใจเต้นเร็ว คลื่นไส้อาเจียนรุนแรง และควรงดต่อไปอีกอย่างน้อย 72 ชั่วโมงหลังหยุดยา",
+    wrongExplanation: "ข้อ 1, 3 และ 4 ให้ข้อมูลผิดพลาดทางวิชาการและนำไปสู่ผลข้างเคียงที่เป็นอันตรายต่อร่างกายคนไข้",
+    mindset: "ปฏิสัมพันธ์ระหว่างยาและอาหาร/เครื่องดื่ม (Drug-Food Interactions) ที่รุนแรงเป็นข้อสอบยอดนิยม ช้อยส์ที่ถูกต้องต้องชัดเจนและเน้นการป้องกันความเสี่ยงสูงสุด",
+    speedHack: "หากเห็นชื่อยาแก้ติดเชื้อในช่องปาก/อวัยวะสืบพันธุ์อย่าง Metronidazole ข้อห้ามสำคัญคือห้ามกินกับแอลกอฮอล์เด็ดขาด ('strongly advise against consuming alcohol')"
+  },
+  {
+    id: "T1-013",
+    difficulty: "Easy",
+    topic: "Customer Service",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I lost the receipt for my prescription purchase. Can you print another copy for my insurance claim?\"<br>Pharmacist: \"______________________. I just need to search for your name and date of birth in our system.\"<br>Customer: \"Thank you. My birthdate is June 12th, 1995.\"",
+    passage: null,
+    options: [
+      "No, once a receipt is printed, it is deleted forever.",
+      "Certainly, we can reprint that for you without any problem.",
+      "You should contact the insurance company directly to print it.",
+      "Reprinting costs double the original price of the medicine."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 การยินยอมช่วยจัดพิมพ์ใบเสร็จรับเงินใหม่ให้คนไข้เพื่อเบิกประกันภัย เป็นการบริการลูกค้าที่เหมาะสม สุภาพ และมีแนวปฏิบัติรองรับในระบบไอทีของร้านยาทั่วไป",
+    wrongExplanation: "ข้อ 1 ให้ข้อมูลของระบบแคชเชียร์ที่ล้าหลังและไม่เป็นจริง; ข้อ 3 ปัดภาระงานให้บริษัทประกัน; ข้อ 4 คิดค่าพิมพ์ใบเสร็จแพงเกินเหตุและผิดจริยธรรมการค้า",
+    mindset: "อำนวยความสะดวกในส่วนงานเอกสารสิทธิ์และสิทธิประโยชน์ของคนไข้ภายใต้ความโปร่งใสและถูกต้องตามข้อบังคับ",
+    speedHack: "สังเกตประโยคสนับสนุนในโจทย์ 'I just need to search...' แสดงว่าประโยคก่อนหน้าต้องตอบรับยินดีทำให้อย่างแน่นอน ('Certainly, we can reprint...')"
+  },
+  {
+    id: "T1-014",
+    difficulty: "Medium",
+    topic: "Side Effects",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"Since I started this new antidepressant medication, I have been experiencing extremely dry mouth.\"<br>Pharmacist: \"This is a common anticholinergic side effect. ______________________.\"<br>Patient: \"I will carry a water bottle with me from now on. Thanks!\"",
+    passage: null,
+    options: [
+      "You should stop taking the pills immediately to cure it.",
+      "Try taking frequent sips of water, chewing sugarless gum, or sucking on ice chips to stimulate saliva flow.",
+      "This means your kidneys are failing; you need to go to the emergency room.",
+      "You should drink salt water every morning."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรแนะนำวิธีบรรเทาอาการข้างเคียงปากแห้งคอแห้ง (dry mouth) ที่ถูกต้องและปฏิบัติได้จริงโดยไม่มีผลเสียต่อการรักษาหลัก เช่น จิบน้ำบ่อยๆ เคี้ยวหมากฝรั่งปราศจากน้ำตาล หรืออมน้ำแข็งก้อนเล็กๆ",
+    wrongExplanation: "ข้อ 1 แนะนำให้หยุดยาต้านเศร้าเองทันทีซึ่งอาจกระตุ้นการถอนยาและเสี่ยงซึมเศร้ารุนแรง; ข้อ 3 วินิจฉัยผิดพลาดและตื่นตระหนกเกินจริง; ข้อ 4 การกินน้ำเกลืออาจทำให้ความดันโลหิตสูงและไตทำงานหนักเกินไป",
+    mindset: "การบริหารจัดการผลข้างเคียงของยา (Side Effect Management) ต้องประคับประคองผู้ป่วยไม่ให้หยุดยาเองโดยพลการ และเน้นแนวทางบรรเทาอาการเชิงพฤติกรรมที่ปลอดภัย",
+    speedHack: "แก้ปากแห้ง ('dry mouth') มองหาคีย์เวิร์ด 'sips of water' (จิบน้ำ) หรือ 'sugarless gum' (หมากฝรั่งไม่มีน้ำตาล) เพื่อช่วยกระตุ้นน้ำลาย"
+  },
+  {
+    id: "T1-015",
+    difficulty: "Hard",
+    topic: "Elderly Care",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Elderly Patient: \"I can't open these child-resistant pill bottles anymore because my arthritis has gotten much worse.\"<br>Pharmacist: \"______________________.\"<br>Patient: \"Oh, that would make my daily routine so much easier. Thank you!\"",
+    passage: null,
+    options: [
+      "You should ask your neighbors to open them for you every day.",
+      "We can replace the child-resistant caps with easy-open, non-safety caps, provided there are no small children living in your home.",
+      "Arthritis is a natural part of aging, so there isn't much we can do about the bottles.",
+      "You can use a hammer to break the caps open at home."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 การเสนอเปลี่ยนฝาขวดยาเป็นแบบเปิดง่าย (easy-open caps) ให้คนไข้สูงอายุที่มีภาวะข้ออักเสบ (arthritis) โดยมีข้อกำหนดเรื่องความปลอดภัยตรวจสอบว่าไม่มีเด็กเล็กในบ้าน เป็นการบริการที่ใส่ใจความเฉพาะบุคคล (Personalized service) และปลอดภัยตามมาตรฐานสากล",
+    wrongExplanation: "ข้อ 1 เสนอแนวทางพึ่งพาผู้อื่นที่ปฏิบัติจริงไม่ได้สม่ำเสมอ; ข้อ 3 ปฏิเสธการช่วยเหลือแบบเฉยเมย; ข้อ 4 แนะนำพฤติกรรมเสี่ยงอันตรายยารั่วไหลหรือเศษแก้วปนเปื้อน",
+    mindset: "การดูแลผู้สูงอายุ (Geriatric care) ในบริบทการแพทย์ ต้องการความยืดหยุ่นและการสนับสนุนทางอุปกรณ์เพื่อช่วยให้คนไข้ทานยาได้ครบถ้วนและรักษาคุณภาพชีวิตที่ดี",
+    speedHack: "มองหาคีย์เวิร์ดแก้ปัญหาเรื่องฝาปิดขวดเปิดยากสอดรับกับโรคข้ออักเสบ เช่น 'easy-open caps' หรือ 'non-safety caps'"
+  },
+  {
+    id: "T1-016",
+    difficulty: "Medium",
+    topic: "Patient Education",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"Why does this heart medicine look different from my last refill? The shape and color are not the same.\"<br>Pharmacist: \"______________________. It contains the exact same active ingredients, dose, and quality standards.\"<br>Customer: \"Ah, I understand. As long as it works the same, I don't mind.\"",
+    passage: null,
+    options: [
+      "We made a mistake and gave you the wrong medication.",
+      "Our supplier sent us a generic alternative from a different manufacturer because the brand name drug is currently out of stock.",
+      "We changed the recipe to make the medicine taste sweeter.",
+      "The color changes based on the weather conditions of this month."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายอิงหลักวิชาการเรื่องการจ่ายยาชื่อสามัญแทนยาต้นแบบ (generic substitution) จากบริษัทผู้ผลิตต่างรายกันเนื่องจากสินค้าเดิมขาดตลาด ยืนยันว่ายาทำงานเหมือนเดิม มีสารออกฤทธิ์และมาตรฐานเท่ากัน แม้ลักษณะภายนอกจะต่างกันก็ตาม",
+    wrongExplanation: "ข้อ 1 ยอมรับข้อผิดพลาดในการจัดยาซึ่งหากเกิดขึ้นจริงต้องเรียกคืนยาไม่ใช่ยืนยันว่ากินต่อได้; ข้อ 3 ยาโรคหัวใจไม่มีการแต่งหวานเล่นๆ; ข้อ 4 อธิบายไร้สาระเชิงวิทยาศาสตร์",
+    mindset: "เมื่อผู้ป่วยสงสัยเรื่องความต่างเชิงกายภาพของยา ให้ตอบด้วยข้อเท็จจริงเกี่ยวกับการทดแทนด้วยยาชื่อสามัญ (Generic drugs) และหลักประกันประสิทธิผลการรักษาความปลอดภัยทางเภสัชกรรม",
+    speedHack: "คำว่า 'generic alternative' (ยาชื่อสามัญทดแทน) และ 'same active ingredients' เป็นคีย์เวิร์ดหลักของคำอธิบายทางเภสัชศาสตร์เมื่อยาหน้าตาเปลี่ยนไป"
+  },
+  {
+    id: "T1-017",
+    difficulty: "Easy",
+    topic: "Consultation & Care",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I am looking for a facial sunscreen, but my skin gets irritated and breaks out very easily.\"<br>Pharmacist: \"______________________.\"<br>Customer: \"Perfect. I will try this one then.\"",
+    passage: null,
+    options: [
+      "All sunscreens will cause breakouts, so you should avoid going outdoors.",
+      "You should look for a physical sunscreen labeled as non-comedogenic and hypoallergenic, which won't clog your pores.",
+      "Just buy the cheapest one we have on the shelf.",
+      "You can apply body sunscreen on your face to save money."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 แนะนำผลิตภัณฑ์ดูแลผิวที่ปลอดภัยสำหรับผิวแพ้ง่าย (sensitive/acne-prone skin) โดยระบุคุณสมบัติเฉพาะคือ non-comedogenic (ไม่ก่อให้เกิดการอุดตัน) และ hypoallergenic (ผ่านการทดสอบว่าไม่ก่อการแพ้) ซึ่งตรงกับความต้องการของลูกค้า",
+    wrongExplanation: "ข้อ 1 เป็นคำแนะนำเชิงปฏิเสธที่ไม่ช่วยหาทางออก; ข้อ 3 แนะนำแบบปัดความรับผิดชอบเชิงวิชาชีพ; ข้อ 4 แนะนำสิ่งที่จะยิ่งทำให้หน้าอุดตันและแพ้หนักขึ้น (ยาทากายห้ามทาหน้า)",
+    mindset: "คำแนะนำผลิตภัณฑ์สุขภาพและความงาม (Cosmeceuticals) ต้องตอบสนองต่อสภาพผิวจำเพาะของคนไข้เพื่อความปลอดภัยและป้องกันการระคายเคือง",
+    speedHack: "ผิวแพ้ง่ายและเป็นสิวง่าย ('irritated and breaks out') มักจับคู่กับสารเฉพาะทางอย่าง 'non-comedogenic' และ 'hypoallergenic'"
+  },
+  {
+    id: "T1-018",
+    difficulty: "Medium",
+    topic: "Pediatric Care",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Mother: \"My two-year-old child has a fever. Can I give him half of this adult paracetamol tablet?\"<br>Pharmacist: \"______________________. Dosing in children must be calculated strictly by their weight, using liquid pediatric syrup.\"<br>Mother: \"I see. Let me buy the pediatric syrup and a measuring syringe then.\"",
+    passage: null,
+    options: [
+      "Yes, half a tablet is perfectly fine for toddlers.",
+      "No, adult tablets are not safe for toddlers because it is very difficult to measure the exact dose, and they pose a choking hazard.",
+      "You should wait for the fever to go away naturally without any medicine.",
+      "Just grind the adult pill and mix it in his milk bottle."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ตามหลักการรักษาความปลอดภัยในผู้ป่วยเด็ก ห้ามนำยาเม็ดของผู้ใหญ่มาหักแบ่งให้เด็กเล็กทานเด็ดขาดเนื่องจากตวงโดสได้ยาก เสี่ยงเกิดพิษต่อตับจากการได้รับยาเกินขนาด (Acetaminophen toxicity) และอันตรายจากการสำลักเม็ดยา ควรใช้ยาสินค้าของเด็กเฉพาะที่คำนวณตามน้ำหนักตัว",
+    wrongExplanation: "ข้อ 1 และ 4 ยินยอมหรือแนะนำการใช้ยาผู้ใหญ่ในเด็กเล็กซึ่งเป็นอันตรายรุนแรง; ข้อ 3 ปฏิเสธการดูแลรักษาเบื้องต้น",
+    mindset: "ข้อสอบการรักษากลุ่มผู้ป่วยเฉพาะ (Special populations เช่น เด็ก หญิงตั้งครรภ์) เน้นความปลอดภัยสูงสุด ยาเม็ดผู้ใหญ่ไม่ใช่ยาสำหรับเด็กเล็กเด็ดขาด",
+    speedHack: "คำค้นหาหลักคือการห้ามแบ่งยาเม็ดผู้ใหญ่ให้เด็กทาน ('No, adult tablets are not safe for toddlers')"
+  },
+  {
+    id: "T1-019",
+    difficulty: "Hard",
+    topic: "Antibiotic Stewardship",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I have a scratchy throat and a runny nose. Can I buy some amoxicillin capsules?\"<br>Pharmacist: \"Based on your symptoms, it is highly likely a viral cold, not a bacterial infection. ______________________.\"<br>Customer: \"I understand. I will take the sore throat lozenges and rest instead.\"",
+    passage: null,
+    options: [
+      "Antibiotics are good for viruses, so I will sell you three boxes.",
+      "Taking antibiotics for viral infections is ineffective, contributes to bacterial resistance, and may cause side effects. I recommend symptomatic treatment and rest.",
+      "We are out of amoxicillin, but I can sell you a stronger kidney medicine.",
+      "You should go to the hospital and request a surgery for your throat."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายอย่างถูกต้องตามหลักวิชาชีพและจริยธรรมควบคุมการใช้ยาฆ่าเชื้อ (Antibiotic Stewardship) ว่าไข้หวัดทั่วไปเกิดจากไวรัส การทานยาฆ่าเชื้อแบคทีเรียอย่าง amoxicillin นอกจากไม่ช่วยรักษาแล้วยังกระตุ้นเชื้อดื้อยาและเกิดผลข้างเคียงโดยไม่จำเป็น พร้อมแนะนำให้รักษาตามอาการและพักผ่อน",
+    wrongExplanation: "ข้อ 1 จ่ายยาฆ่าเชื้อพร่ำเพรื่อในโรคไวรัส; ข้อ 3 เสนอขายยาไตซึ่งไม่เกี่ยวข้องกับโรคหวัดเลย; ข้อ 4 แนะนำการผ่าตัดซึ่งเกินจริงอย่างมากสำหรับอาการหวัดคัดจมูก",
+    mindset: "ทัศนคติการลดการใช้ยาปฏิชีวนะเกินความจำเป็น (Bacterial vs. Viral) เป็นข้อสอบจรรยาบรรณแพทย์และเภสัชกรรมระดับสากลที่พบบ่อยมาก ช้อยส์ที่ตอบต้องปฏิเสธอย่างมีเหตุผลอิงหลักต้านเชื้อดื้อยา",
+    speedHack: "เมื่อคนไข้มาขอซื้อยาปฏิชีวนะ ('amoxicillin/antibiotics') ด้วยอาการหวัดเจ็บคอธรรมดา คำตอบที่ถูกจะเตือนเรื่องเชื้อดื้อยา ('bacterial resistance/ineffective for viruses') เสมอ"
+  },
+  {
+    id: "T1-020",
+    difficulty: "Medium",
+    topic: "Counseling & Lifestyle",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I want to quit smoking and bought these nicotine patches, but I don't know how to apply them properly.\"<br>Pharmacist: \"Apply one patch daily to a clean, dry, hairless area on your upper body. ______________________.\"<br>Customer: \"Got it. Rotating the site will prevent my skin from getting irritated.\"",
+    passage: null,
+    options: [
+      "Stick it on the exact same spot every day to maximize absorption.",
+      "Make sure to rotate the application site daily and never apply a new patch to a recently used spot for at least a week.",
+      "You can wear three patches at the same time if you crave cigarettes heavily.",
+      "Remove the patch before bathing and do not apply it if you plan to sweat."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 คำแนะนำที่ถูกต้องในการแปะแผ่นนิโคตินเพื่อเลิกบุหรี่คือต้องเปลี่ยนตำแหน่งการแปะทุกวัน (rotate site) และหลีกเลี่ยงการแปะซ้ำที่เดิมภายในช่วง 1 สัปดาห์ เพื่อป้องกันอาการผิวหนังระคายเคืองและอักเสบ ซึ่งสอดรับกับที่คนไข้ตอบทบทวนความเข้าใจในตอนท้าย",
+    wrongExplanation: "ข้อ 1 การแปะที่เดิมซ้ำจะทำให้ผิวหนังระคายเคืองสะสมและอุดตัน; ข้อ 3 แปะพร้อมกัน 3 แผ่นจะทำให้ได้รับนิโคตินเกินขนาดเข้าสู่กระแสเลือดเป็นอันตรายต่อหัวใจ; ข้อ 4 แผ่นแปะส่วนใหญ่กันน้ำและออกแบบให้ทนทานต่อการใช้ชีวิตประจำวัน",
+    mindset: "การแนะนำวิธีการใช้อุปกรณ์ส่งผ่านยาทางผิวหนัง (Transdermal patches) ต้องการคำอธิบายขั้นตอนที่ถูกต้อง ปลอดภัย และป้องกันความเสี่ยงต่อผิวสัมผัสของผู้ป่วย",
+    speedHack: "ดูคำใบ้ของผู้ป่วย 'Rotating the site will prevent...' ประโยคก่อนหน้าต้องเชื่อมโยงกับการหมุนเวียนตำแหน่งอย่างแน่นอน ('rotate the application site daily')"
+  },
+  {
+    id: "T1-021",
+    difficulty: "Easy",
+    topic: "Asthma Management",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"I had a sudden asthma attack yesterday, but I panicked and forgot the correct technique for my inhaler.\"<br>Pharmacist: \"First, exhale completely. Then, press the canister while inhaling slowly and deeply. ______________________.\"<br>Patient: \"Ah, holding my breath for 10 seconds allows the medication to settle in my lungs properly.\"",
+    passage: null,
+    options: [
+      "Exhale immediately after pressing the canister.",
+      "Hold your breath for about 10 seconds before breathing out slowly.",
+      "Drink a large glass of cold water immediately while inhaling.",
+      "Use the inhaler only when you are asleep."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายขั้นตอนการพ่นยาหอบหืดประเภท MDI ที่ถูกต้องคือ หลังจากกดพ่นยาและสูดลมหายใจเข้าลึกๆ แล้ว ต้องกลั้นหายใจไว้ประมาณ 10 วินาที (hold breath for 10 seconds) เพื่อให้ละอองยาตกตะกอนในปอดส่วนลึกอย่างมีประสิทธิภาพก่อนจะผ่อนลมหายใจออกช้าๆ",
+    wrongExplanation: "ข้อ 1 พ่นแล้วหายใจออกทันทีจะทำให้ยาปลิวออกมาหมดไม่ถึงปอด; ข้อ 3 การดื่มน้ำขณะพ่นยาเป็นไปไม่ได้และทำให้สำลัก; ข้อ 4 ยาพ่นฉุกเฉินต้องใช้ขณะมีอาการเตือนขณะตื่นรู้ตัว",
+    mindset: "ทักษะคำแนะนำการใช้อุปกรณ์เฉพาะทางการแพทย์ (Medical devices counseling) ต้องอิงตามข้อเท็จจริงทางคลินิกที่ผ่านการพิสูจน์แล้วเพื่อประโยชน์สูงสุดของผู้ป่วย",
+    speedHack: "ประโยคถัดมาของผู้ป่วยกล่าวถึง 'holding my breath for 10 seconds' ดังนั้นในช่องว่างต้องระบุคำแนะนำดังกล่าวโดยตรง"
+  },
+  {
+    id: "T1-022",
+    difficulty: "Medium",
+    topic: "Supplements",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Short Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"When is the best time for me to take my daily calcium carbonate supplement?\"<br>Pharmacist: \"______________________. Stomach acid produced during meals significantly enhances its dissolution and absorption.\"<br>Patient: \"Okay, I will take it right after my breakfast or lunch then.\"",
+    passage: null,
+    options: [
+      "Always take it on an empty stomach right before going to bed.",
+      "It should be taken with or immediately after a meal.",
+      "Dissolve the tablet in coffee or sparkling water before consumption.",
+      "Take it only once a week in a very high dose."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 เภสัชกรแนะนำข้อมูลการกินอาหารเสริมแคลเซียมคาร์บอเนต (calcium carbonate) ที่ถูกต้องคือควรกินพร้อมอาหารหรือหลังอาหารทันที เนื่องจากตัวยาต้องการกรดในกระเพาะอาหาร (stomach acid) ซึ่งจะหลั่งออกมาขณะเคี้ยวอาหารช่วยในการละลายและการดูดซึมเข้าร่างกายได้ดีที่สุด",
+    wrongExplanation: "ข้อ 1 การกินขณะท้องว่างจะลดการดูดซึมของเกลือคาร์บอเนตอย่างมาก; ข้อ 3 เครื่องดื่มที่เป็นกรดคาเฟอีนหรืออัดลมขัดขวางการดูดซึมแคลเซียม; ข้อ 4 ปริมาณแคลเซียมที่มากเกินไปในครั้งเดียวจะส่งผลต่อทางเดินอาหารและไต",
+    mindset: "การดูดซึมยาและอาหารเสริมขึ้นกับสภาวะความเป็นกรด-ด่างในระบบทางเดินอาหาร การอธิบายข้อจำกัดนี้กับคนไข้ช่วยเพิ่มประสิทธิภาพการดูแลสุขภาพของคนไข้ได้",
+    speedHack: "สังเกตเหตุผลในประโยคถัดไป 'Stomach acid produced during meals...' (กรดที่หลั่งระหว่างมื้ออาหาร) สอดคล้องกับการรับประทานพร้อมหรือหลังอาหารทันที"
+  },
+
+  // --- PART 1: LONG CONVERSATIONS (Q23-Q32) ---
+  // Dialogue 1: Travel consultation (Q23 Easy, Q24 Medium)
+  {
+    id: "T1-023",
+    difficulty: "Easy",
+    topic: "Travel Medicine",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 40s",
+    estimatedTime: 40,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "At a travel health consultation clinic:<br>Patient: \"I'm planning a hiking trip to a remote rainforest next month. What malaria precaution should I take?\"<br>Pharmacist: \"First, we need to look at your itinerary. Depending on the exact region, you may need prescription prophylaxis tablets. ______________________.\"<br>Patient: \"I will buy a high-concentration DEET spray today. What about the medication timing?\"",
+    passage: "<b>[Context for Q23 and Q24]</b> A patient is discussing healthcare preparations with a travel pharmacist before departing on a jungle expedition.",
+    options: [
+      "Insect repellents do not work against malaria mosquitoes.",
+      "In addition to pills, using a mosquito repellent containing DEET on exposed skin and wearing long sleeves is crucial.",
+      "You should avoid drinking any water during the trip to prevent malaria.",
+      "Malaria is only transmitted by contact with wild monkeys."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 คำแนะนำเบื้องต้นเพื่อป้องกันโรคไข้มาลาเรียที่นำโดยยุงก้นปล่อง (Anopheles) นอกเหนือจากการทานยาคือการป้องกันการถูกยุงกัดภายนอก เช่น ทาผลิตภัณฑ์ไล่แมลงที่มีสาร DEET และการแต่งกายมิดชิด ซึ่งเชื่อมโยงกับปฏิกิริยาตอบรับต่อมาของคนไข้เรื่อง DEET สเปรย์",
+    wrongExplanation: "ข้อ 1 ข้อมูลผิดพลาดทางสาธารณสุข; ข้อ 3 แหล่งน้ำดื่มที่ไม่สะอาดเกี่ยวโยงกับโรคอหิวาต์หรือบิดไม่ใช่ยุงนำโรคมาลาเรีย; ข้อ 4 สัตว์รังโรคมาลาเรียไม่ได้เกิดจากการสัมผัสลิงโดยตรง",
+    mindset: "การป้องกันโรคเขตร้อน (Tropical diseases prevention) ต้องครอบคลุมทั้งมาตรการทางเภสัชวิทยา (ยาเม็ดป้องกัน) และมาตรการทางกายภาพ (การเลี่ยงแมลงสัตว์กัดต่อย) เสมอ",
+    speedHack: "คำตอบของคนไข้ต่อมาคือ 'I will buy a high-concentration DEET spray...' แสดงว่าประโยคก่อนหน้าจากเภสัชกรต้องกล่าวถึงข้อดีหรือการใช้ 'DEET' แน่นอน"
+  },
+  {
+    id: "T1-024",
+    difficulty: "Medium",
+    topic: "Travel Medicine",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Pharmacist: \"The prevention pills must be started before you enter the forest. ______________________.\"<br>Patient: \"Understood. I will set a reminder on my phone to make sure I finish the whole bottle even after I return.\"",
+    passage: "<b>[Context for Q23 and Q24]</b> A patient is discussing healthcare preparations with a travel pharmacist before departing on a jungle expedition.",
+    options: [
+      "You only need to take them on the days you see mosquitoes.",
+      "You must take the pills daily starting 2 days before the trip, throughout the stay, and continue for 4 weeks after leaving the malaria-endemic area.",
+      "Stop taking the medicine immediately if you feel a headache.",
+      "You can drink alcohol to dissolve the pills faster."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายขั้นตอนและวินัยการรับประทานยาป้องกันมาลาเรีย (เช่น Doxycycline หรือ Atovaquone-Proguanil) ที่ถูกต้อง คือต้องทานก่อนเข้าพื้นที่ ระหว่างพำนัก และที่สำคัญที่สุดคือต้องทานต่อเนื่องไปอีกระยะหนึ่งหลังออกจากพื้นที่แล้วเพื่อให้แน่ใจว่ากำจัดเชื้อในตับได้หมด สอดคล้องกับที่คนไข้บอกว่าจะตั้งเตือนเพื่อทานต่อแม้จะกลับมาแล้ว",
+    wrongExplanation: "ข้อ 1 ทานเฉพาะตอนเห็นยุงเป็นการควบคุมโรคที่ล้มเหลว; ข้อ 3 การหยุดยาทันทีเมื่อมีไซด์เอฟเฟกต์เล็กน้อยอาจทำให้ติดเชื้อได้; ข้อ 4 เครื่องดื่มมึนเมาส่งผลต่อการทำงานของตับร่วมกับยา",
+    mindset: "วินัยการใช้ยา (Medication adherence) โดยเฉพาะยากลุ่มป้องกันเชื้อและยาฆ่าเชื้อ ต้องทานให้ครบตามคำแนะนำของแพทย์/เภสัชกรอย่างเคร่งครัดเพื่อผลการรักษาที่ดีและกันเชื้อดื้อยา",
+    speedHack: "คนไข้บอกว่าจะทานยาต่อหลังกลับมา ('continue even after I return') สอดคล้องกับรายละเอียดข้อสอง 'continue for 4 weeks after leaving...'"
+  },
+  // Dialogue 2: Drug-herb interaction (Q25 Hard, Q26 Medium)
+  {
+    id: "T1-025",
+    difficulty: "Hard",
+    topic: "Drug-Herb Interaction",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"I've been taking oral contraceptives for a year. Recently, I've been feeling anxious and want to start taking St. John's Wort herbal capsules. Is it safe?\"<br>Pharmacist: \"No, it is not recommended. St. John's Wort is a potent inducer of hepatic enzymes. ______________________.\"<br>Patient: \"Oh, I didn't know an herb could affect my birth control pills. What are the potential consequences?\"",
+    passage: "<b>[Context for Q25 and Q26]</b> Discussion regarding potential drug-herb interactions between oral contraceptives and St. John's Wort herbal supplements.",
+    options: [
+      "It will make your birth control pills work twice as effectively.",
+      "It accelerates the metabolism of your birth control hormones, significantly lowering their blood levels and efficacy.",
+      "The herb will physically dissolve the pills inside your stomach.",
+      "It changes the birth control pills into vitamin C."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายปฏิกิริยาระหว่างยาและสมุนไพรอย่างถูกต้องทางวิทยาศาสตร์การแพทย์ (St. John's Wort เป็น enzyme inducer กระตุ้นการทำงานของเอนไซม์ตับ CYP3A4 ส่งผลให้ยาคุมกำเนิดถูกกำจัดและเผาผลาญเร็วขึ้น ระดับฮอร์โมนในเลือดลดลงจนประสิทธิภาพการคุมกำเนิดล้มเหลวและนำไปสู่การตั้งครรภ์ไม่พึงประสงค์)",
+    wrongExplanation: "ข้อ 1 อธิบายผลลัพธ์ตรงกันข้ามกับข้อเท็จจริง; ข้อ 3 และ 4 อธิบายเชิงกายภาพและเคมีที่ไม่เป็นจริงและไร้สาระ",
+    mindset: "ปฏิกิริยาระหว่างยาและสมุนไพร (Drug-Herb Interactions) ที่ทำให้ระดับยาคุมลดลงเป็นหัวข้อการเตือนภัยที่สำคัญในงานเภสัชศาสตร์สากล ช้อยส์ต้องให้รายละเอียดกลไกที่ถูกต้องและเข้าใจง่าย",
+    speedHack: "เมื่อเห็นหัวข้อ 'St. John's Wort' เจอกับ 'birth control/contraceptives' ผลลัพธ์คือประสิทธิภาพคุมกำเนิดจะลดลงอย่างมากจากการเผาผลาญยาที่ตับเร็วขึ้น ('lower efficacy / accelerates metabolism')"
+  },
+  {
+    id: "T1-026",
+    difficulty: "Medium",
+    topic: "Drug-Herb Interaction",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Pharmacist: \"______________________. If you still want to take the herb, you should consult your doctor about switching to a non-hormonal contraceptive option like an IUD.\"<br>Patient: \"Thank you. I will schedule an appointment with my gynecologist to discuss this immediately.\"",
+    passage: "<b>[Context for Q25 and Q26]</b> Discussion regarding potential drug-herb interactions between oral contraceptives and St. John's Wort herbal supplements.",
+    options: [
+      "It could lead to unexpected breakthrough bleeding and unplanned pregnancy.",
+      "There are no consequences, you will feel completely normal.",
+      "Your skin will turn green due to the herbal extract.",
+      "The combination will instantly make you permanently infertile."
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) ผลลัพธ์ลบที่เกิดขึ้นโดยตรงจากการที่ระดับยาคุมกำเนิดลดลงคือ ทำให้มีเลือดออกกระปริดกระปรอย (breakthrough bleeding) และความเสี่ยงในการตั้งครรภ์ที่ไม่ตั้งใจ (unplanned pregnancy) สูงขึ้น ซึ่งสอดรับกับการทบทวนคำแนะนำของแพทย์นรีเวชถัดมา",
+    wrongExplanation: "ข้อ 1 (ตัวเลือกสอง) ละเลยความเสี่ยงอันตรายหลัก; ข้อ 2 (ตัวเลือกสาม) และ 3 (ตัวเลือกสี่) ให้ข้อมูลโอเวอร์และไม่มีหลักการวิชาการแพทย์รองรับ",
+    mindset: "เสนอคำเตือนผลลัพธ์ที่เป็นอันตรายโดยตรงควบคู่กับการแนะนำแนวทางการปรับเปลี่ยนวิธีป้องกันที่เหมาะสมและปลอดภัยสำหรับสตรี",
+    speedHack: "ความล้มเหลวของยาคุมกำเนิด ('birth control efficacy drop') ผลเสียตรงตัวคือ 'unplanned pregnancy' (การตั้งครรภ์ไม่ตั้งใจ)"
+  },
+  // Dialogue 3: Defective inhaler (Q27 Easy, Q28 Medium)
+  {
+    id: "T1-027",
+    difficulty: "Easy",
+    topic: "Customer Service",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 40s",
+    estimatedTime: 40,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Customer: \"I bought this asthma inhaler yesterday, but when I press the canister, no spray comes out. I think it is defective.\"<br>Pharmacist: \"I'm sorry to hear that. Let me inspect the device. ______________________.\"<br>Customer: \"Yes, I did try to spray it, but the nozzle seems completely blocked.\"",
+    passage: "<b>[Context for Q27 and Q28]</b> A customer returns a malfunctioning inhaler device to the pharmacy clinic.",
+    options: [
+      "You must have dropped it in water and broken it yourself.",
+      "Did you check if the cap was removed and if the nozzle was primed properly before your first use?",
+      "We do not accept returns under any circumstances, please leave.",
+      "Asthma inhalers do not emit sprays, they are dry powder only."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) เภสัชกรสอบถามข้อมูลเบื้องต้นเกี่ยวกับเทคนิคการใช้งานและการเตรียมอุปกรณ์ (priming) อย่างสุภาพก่อนจะตัดสินใจทำขั้นตอนต่อไป เพื่อหาสาเหตุที่แท้จริงของการอุดตันของท่อพ่น",
+    wrongExplanation: "ข้อ 0 (ตัวเลือกแรก) กล่าวหาลูกค้าทำพังเอง; ข้อ 2 (ตัวเลือกสาม) ปฏิเสธการดูแลลูกค้าอย่างไร้มารยาท; ข้อ 3 (ตัวเลือกสี่) ให้ข้อมูลอุปกรณ์พ่นยาประเภทละอองฝอย (MDI) ที่ผิดพลาด",
+    mindset: "เมื่อลูกค้าเจอปัญหาการใช้งานอุปกรณ์ ต้องทำการตรวจสอบเบื้องต้น (Basic troubleshooting) และให้คำแนะนำเชิงเทคนิคอย่างใจเย็นและเป็นมิตร",
+    speedHack: "การเช็คว่าอุปกรณ์ทำงานได้ไหมมักเริ่มด้วยประโยคถามความเข้าใจพื้นฐาน เช่น 'Did you check if...' หรือ 'primed properly'"
+  },
+  {
+    id: "T1-028",
+    difficulty: "Medium",
+    topic: "Customer Service",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Pharmacist: \"I see that the nozzle has a manufacturing defect blocking the valve. ______________________.\"<br>Customer: \"Thank you so much. I feel much safer having a working inhaler at home now.\"",
+    passage: "<b>[Context for Q27 and Q28]</b> A customer returns a malfunctioning inhaler device to the pharmacy clinic.",
+    options: [
+      "I will write down the manufacturer's email address so you can contact them yourself.",
+      "I will exchange this defective device for a brand-new one from our stock immediately at no extra charge.",
+      "You should buy a second one to see if that one works better.",
+      "I suggest you practice deep breathing exercises instead of using medicine."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) การเปลี่ยนสินค้าชิ้นใหม่ที่มีตำหนิจากการผลิตให้กับลูกค้าทันทีโดยไม่มีค่าใช้จ่ายเพิ่มเติม (exchange for a brand-new one at no extra charge) สะท้อนถึงการแก้ปัญหาอย่างมีคุณธรรม จรรยาบรรณวิชาชีพ และการรับประกันความปลอดภัยของคนไข้",
+    wrongExplanation: "ข้อ 0 (ตัวเลือกแรก) ปัดความรับผิดชอบให้ผู้ผลิตและโยนภาระให้ผู้ป่วยติดต่อเอง; ข้อ 2 (ตัวเลือกสาม) บังคับขายของเพิ่ม; ข้อ 3 (ตัวเลือกสี่) แนะนำวิธีดูแลสุขภาพที่ไม่ตรงกับความจำเป็นของโรคหอบหืดรุนแรง",
+    mindset: "ความปลอดภัยในคนไข้โรคเรื้อรังวิกฤต เช่น หอบหืด จำเป็นต้องมีอุปกรณ์พ่นยาที่ใช้งานได้จริงติดตัวตลอดเวลา การตัดสินใจเชิงบริการต้องคำนึงถึงมิตินี้เป็นหลัก",
+    speedHack: "หากยืนยันว่ามีตำหนิจากการผลิต ('manufacturing defect') วิธีมาตรฐานของร้านยาที่ดีคือการเปลี่ยนชิ้นใหม่ให้ฟรี ('exchange... at no extra charge')"
+  },
+  // Dialogue 4: Patient privacy (Q29 Hard, Q30 Medium)
+  {
+    id: "T1-029",
+    difficulty: "Hard",
+    topic: "Patient Privacy",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Parent: \"I want to see the list of medications my 18-year-old son picked up last week. I am paying for his health insurance.\"<br>Pharmacist: \"______________________.\"<br>Parent: \"But as his father and the policyholder, I have the right to know!\"",
+    passage: "<b>[Context for Q29 and Q30]</b> A parent requests the private medical records of their adult child at the pharmacy.",
+    options: [
+      "Since you pay for the insurance, I can print the list for you immediately.",
+      "I understand you are his father, but since he is an adult, we cannot disclose his prescription records without his written consent due to patient confidentiality laws.",
+      "We do not keep records of young patients because they are too young to care.",
+      "You should ask the insurance company to cancel his coverage so we can share the files."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) ตามกฎหมายการคุ้มครองสิทธิคนไข้และการรักษาความลับผู้ป่วย (Patient Confidentiality) เภสัชกรไม่สามารถเปิดเผยข้อมูลประวัติการใช้ยาของบุตรที่บรรลุนิติภาวะ (อายุ 18 ปีขึ้นไป) ให้กับผู้ปกครองได้โดยปราศจากหนังสือยินยอมเป็นลายลักษณ์อักษรจากตัวคนไข้ แม้ผู้ปกครองจะเป็นผู้จ่ายค่าเบี้ยประกันก็ตาม",
+    wrongExplanation: "ข้อ 0 (ตัวเลือกแรก) ผิดกฎหมายความเป็นส่วนตัวอย่างร้ายแรง; ข้อ 2 (ตัวเลือกสาม) อธิบายผิดหลักการเก็บรักษาฐานข้อมูลเวชระเบียน; ข้อ 3 (ตัวเลือกสี่) เสนอแนวทางก้าวร้าวและละเมิดผลประโยชน์คนไข้",
+    mindset: "สิทธิ์ของผู้ป่วย (Patient Rights) และความเป็นส่วนตัวต้องได้รับการปกป้องอย่างสูงสุด ผู้มีอำนาจจ่ายเงิน (เบี้ยประกันหรือค่ารักษา) ไม่ได้แปลว่ามีสิทธิ์ทางกฎหมายในการเข้าถึงเวชระเบียนส่วนตัวเสมอไป",
+    speedHack: "ประเด็นผู้ป่วยอายุเกิน 18 ปีบริบูรณ์ ('18-year-old') เป็นตัวชี้วัดสิทธิ์การตัดสินใจด้วยตนเองตามกฎหมาย คำตอบต้องอิง 'written consent' (ความยินยอมที่เป็นลายลักษณ์อักษร) หรือ 'confidentiality laws'"
+  },
+  {
+    id: "T1-030",
+    difficulty: "Medium",
+    topic: "Patient Privacy",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Pharmacist: \"I appreciate your situation, but the law applies to all adult patients regardless of who pays the premium. ______________________.\"<br>Parent: \"Fine, I will have my son call you directly to give permission.\"",
+    passage: "<b>[Context for Q29 and Q30]</b> A parent requests the private medical records of their adult child at the pharmacy.",
+    options: [
+      "You should tell your son to go to a different pharmacy from now on.",
+      "The best approach is to have your son sign a authorization form, or have him request the records himself.",
+      "You can just forge his signature on a paper at home.",
+      "Please write a complaint letter to the medical council about these rules."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) เภสัชกรแนะนำแนวปฏิบัติที่ถูกต้องตามกฎหมายในการขอรับบันทึกเวชระเบียนแทนอย่างประนีประนอม คือการให้บุตรเซ็นเอกสารมอบอำนาจ (authorization form) หรือให้บุตรมาขอรับเอกสารด้วยตนเองโดยตรง",
+    wrongExplanation: "ข้อ 0 (ตัวเลือกแรก) ไล่ลูกค้าไปร้านอื่นโดยไม่มีเหตุผลอันควร; ข้อ 2 (ตัวเลือกสาม) แนะนำการปลอมลายเซ็นซึ่งเป็นความผิดทางอาญา; ข้อ 3 (ตัวเลือกสี่) ขาดจิตวิญญาณการให้คำแนะนำเชิงบวก",
+    mindset: "ให้คำแนะนำที่เป็นรูปธรรมเพื่อลดการเผชิญหน้าและชี้ช่องทางที่ถูกต้องตามระเบียบกฎหมายให้กับคนไข้/ญาติ",
+    speedHack: "มองหาทางออกเชิงเอกสารสิทธิ์ที่เป็นทางการ เช่น 'sign an authorization form' หรือมาติดต่อด้วยตนเอง"
+  },
+  // Dialogue 5: Emergency contraception (Q31 Medium, Q32 Hard)
+  {
+    id: "T1-031",
+    difficulty: "Medium",
+    topic: "Contraception",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patient: \"I had unprotected sex last night and need to take emergency contraception. How soon do I need to take it?\"<br>Pharmacist: \"______________________. Ideally, you should take the first dose within 72 hours of intercourse for maximum efficacy.\"<br>Patient: \"Okay, I will take it immediately. What side effects should I watch out for?\"",
+    passage: "<b>[Context for Q31 and Q32]</b> Consultation regarding emergency contraception use, timing, and management of potential side effects.",
+    options: [
+      "You can take it anytime within two weeks, there is no hurry.",
+      "The sooner you take it, the more effective it will be at preventing pregnancy.",
+      "Emergency pills must only be taken after you confirm a pregnancy.",
+      "You should take a double dose of vitamin C instead."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายช่วงเวลาวิกฤตที่มีผลต่อความสำเร็จของยาคุมฉุกเฉิน (emergency contraceptive pills) คือ ยิ่งรับประทานเร็วเท่าใด ประสิทธิภาพในการป้องกันการตั้งครรภ์ก็จะยิ่งสูงขึ้นเท่านั้น (the sooner, the more effective)",
+    wrongExplanation: "ข้อ 1 ให้ข้อมูลผิดพลาดทางเภสัชวิทยาเพราะยามีประสิทธิภาพสูงสุดใน 72 ชั่วโมงแรกและลดลงตามเวลา; ข้อ 3 ยาคุมฉุกเฉินไม่สามารถยุติการตั้งครรภ์ที่เกิดขึ้นแล้วได้; ข้อ 4 วิตามินซีไม่สามารถป้องกันการตั้งครรภ์ได้",
+    mindset: "ความรู้เรื่องหน้าต่างเวลาในการรักษา (Therapeutic window) เป็นประเด็นวิชาการที่ข้อสอบมักหยิบยกมาวัดความรู้ความเข้าใจเรื่องความรีบด่วนในการดูแลสุขภาพทางเพศ",
+    speedHack: "จำหลักการยาคุมฉุกเฉิน: ยิ่งกินเร็ว ยิ่งมีประสิทธิภาพ ('sooner' ย่อมจับคู่กับประสิทธิภาพป้องกันการตั้งครรภ์)"
+  },
+  {
+    id: "T1-032",
+    difficulty: "Hard",
+    topic: "Contraception",
+    section: "Conversation",
+    partTitle: "PART 1: CONVERSATION (Long Conversations)",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Pharmacist: \"Nausea and vomiting are common. ______________________.\"<br>Patient: \"Understood. If I throw up, I will come back to get a replacement dose and take an anti-emetic pill first.\"",
+    passage: "<b>[Context for Q31 and Q32]</b> Consultation regarding emergency contraception use, timing, and management of potential side effects.",
+    options: [
+      "Vomiting is a sign that the medication is toxic, you must go to the ICU.",
+      "If you vomit within two hours of taking a dose, you must take another tablet immediately to ensure protection.",
+      "You can ignore the vomiting and just wait for a week.",
+      "Do not eat any food for 24 hours to prevent throwing up."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อธิบายมาตรการรองรับหากเกิดผลข้างเคียงคลื่นไส้อาเจียนรุนแรงจากยาคุมฉุกเฉิน (เนื่องจากระดับฮอร์โมนสูง) ว่าหากคนไข้อาเจียนออกมาภายใน 2 ชั่วโมงหลังทานยา จำเป็นต้องรับประทานยาซ้ำทดแทนทันทีเพราะยาอาจยังไม่ถูกดูดซึมเต็มที่ ซึ่งสอดรับกับที่คนไข้บอกว่าจะทานยาซ้ำและทานยาแก้คลื่นไส้ก่อน",
+    wrongExplanation: "ข้อ 1 ด่วนสรุปอาการเป็นพิษหนักเกินจริง; ข้อ 3 ละเลยความเสี่ยงการคุมกำเนิดล้มเหลว; ข้อ 4 การอดอาหารขัดแย้งกับหลักสุขอนามัยที่ดี",
+    mindset: "เตรียมความพร้อมให้คนไข้สำหรับเหตุการณ์ข้างเคียงที่คาดเดาได้ (Expected adverse events) และระบุวิธีแก้ไขเชิงปฏิบัติอย่างเป็นขั้นตอนที่ปลอดภัย",
+    speedHack: "สังเกตประโยคสนับสนุนของคนไข้ 'If I throw up, I will come back to get a replacement dose...' สอดคล้องกับการแนะนำกรณีอาเจียนภายใน 2 ชั่วโมงในตัวเลือกข้อสอง"
+  },
+
+  // --- PART 2: TEXT COMPLETION (Q33-Q40) ---
+  // Passage 1: E-Prescription Transition (Q33-Q36)
+  {
+    id: "T1-033",
+    difficulty: "Easy",
+    topic: "Digital Health Transition",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 35s",
+    estimatedTime: 35,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [33].",
+    passage: "<p><b>E-Prescription System Transition Notice</b></p><p>Beginning next Monday, our hospital network will officially transition to a fully digital electronic prescription (e-prescription) system. This modernization effort is designed to [33] medication errors caused by illegible handwriting. Doctors will input prescriptions directly into the patient database, [34] the transmission process to the pharmacy queue. Patients will no longer need to worry about losing physical paper prescriptions. However, during the initial weeks of implementation, we kindly ask for your [35] as our medical staff adjusts to the new interface. We assure you that this technology will [36] clinical safety and streamline your pharmacy pickup experience.</p>",
+    options: [
+      "increase",
+      "eliminate",
+      "ignore",
+      "celebrate"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'eliminate' (กำจัด/ลดให้หมดไป) เนื่องจากเป้าหมายของการใช้ระบบใบสั่งยาอิเล็กทรอนิกส์คือการลดหรือกำจัดความผิดพลาดในการจ่ายยาที่เกิดจากการลายมือแพทย์ที่อ่านยาก (illegible handwriting)",
+    wrongExplanation: "ข้อ 1 เพิ่มความผิดพลาด (increase) ขัดแย้งกับข้อดีของระบบดิจิทัล; ข้อ 3 เพิกเฉย (ignore); ข้อ 4 เฉลิมฉลอง (celebrate) ใช้ผิดบริบทของความผิดพลาดทางการแพทย์",
+    mindset: "โจทย์ Text Completion อาศัยการเชื่อมโยงความหมายรอบคำช่องว่าง (Contextual clues) คำที่เป็นบวกมักช่วยลดสิ่งไม่พึงประสงค์ (errors)",
+    speedHack: "สังเกตบริบท 'errors caused by illegible handwriting' (ความผิดพลาดจากลายมือที่อ่านยาก) ระบบใหม่เข้ามาเพื่อแก้ไขปัญหานี้ ดังนั้นต้องหาคำว่า 'ลด' หรือ 'กำจัด' เช่น 'eliminate'"
+  },
+  {
+    id: "T1-034",
+    difficulty: "Medium",
+    topic: "Digital Health Transition",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [34].",
+    passage: "<p><b>E-Prescription System Transition Notice</b></p><p>Beginning next Monday, our hospital network will officially transition to a fully digital electronic prescription (e-prescription) system. This modernization effort is designed to [33] medication errors caused by illegible handwriting. Doctors will input prescriptions directly into the patient database, [34] the transmission process to the pharmacy queue. Patients will no longer need to worry about losing physical paper prescriptions. However, during the initial weeks of implementation, we kindly ask for your [35] as our medical staff adjusts to the new interface. We assure you that this technology will [36] clinical safety and streamline your pharmacy pickup experience.</p>",
+    options: [
+      "delaying",
+      "accelerating",
+      "forgetting",
+      "refusing"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'accelerating' (เร่งความเร็ว/ทำให้เร็วขึ้น) การป้อนข้อมูลลงในฐานข้อมูลผู้ป่วยโดยตรงจะช่วยเร่งกระบวนการส่งต่อใบสั่งยาไปยังคิวของห้องยาให้เร็วและสั้นลง",
+    wrongExplanation: "ข้อ 1 ดีเลย์ทำให้ช้าลง (delaying); ข้อ 3 การลืม (forgetting); ข้อ 4 การปฏิเสธ (refusing) ซึ่งล้วนแต่ส่งผลลบซึ่งขัดแย้งกับประโยชน์ของระบบไอที",
+    mindset: "เลือกรูปคำกริยาเติม -ing (Present participle) ที่ทำหน้าที่ขยายประโยคหลักเพื่อระบุผลลัพธ์เชิงบวกของการทำงานของระบบ",
+    speedHack: "ระบบส่งต่อฐานข้อมูลแบบอัตโนมัติจะช่วยเรื่อง 'ความเร็ว' เสมอ เลือก 'accelerating'"
+  },
+  {
+    id: "T1-035",
+    difficulty: "Medium",
+    topic: "Digital Health Transition",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [35].",
+    passage: "<p><b>E-Prescription System Transition Notice</b></p><p>Beginning next Monday, our hospital network will officially transition to a fully digital electronic prescription (e-prescription) system. This modernization effort is designed to [33] medication errors caused by illegible handwriting. Doctors will input prescriptions directly into the patient database, [34] the transmission process to the pharmacy queue. Patients will no longer need to worry about losing physical paper prescriptions. However, during the initial weeks of implementation, we kindly ask for your [35] as our medical staff adjusts to the new interface. We assure you that this technology will [36] clinical safety and streamline your pharmacy pickup experience.</p>",
+    options: [
+      "impatience",
+      "patience",
+      "financial support",
+      "complaints"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'patience' (ความอดทน) เนื่องจากช่วงเริ่มต้นใช้งานระบบใหม่ เจ้าหน้าที่อาจยังไม่คุ้นเคยทำให้เกิดความล่าช้า จึงต้องขอความร่วมมือและความอดทนจากคนไข้ในการบริการช่วงเปลี่ยนผ่าน",
+    wrongExplanation: "ข้อ 1 ความไม่อดทน (impatience); ข้อ 3 การสนับสนุนทางการเงิน (financial support); ข้อ 4 คำร้องเรียน (complaints) ซึ่งไม่สอดคล้องกับเจตนารมณ์ในการขอความร่วมมือเชิงบวกของประกาศโรงพยาบาล",
+    mindset: "สำนวนสุภาพที่เป็นสากล 'ask for your patience' (ขอความกรุณาอดทนรอ/เข้าใจสถานการณ์) เป็นกลุ่มคำที่ใช้อย่างกว้างขวางในจดหมายบริการสาธารณะ",
+    speedHack: "วลี 'we kindly ask for your...' ในช่วงเปลี่ยนผ่านเทคโนโลยีมักตามด้วยคำนามเชิงขออภัยในความล่าช้าอย่าง 'patience'"
+  },
+  {
+    id: "T1-036",
+    difficulty: "Hard",
+    topic: "Digital Health Transition",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 50s",
+    estimatedTime: 50,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [36].",
+    passage: "<p><b>E-Prescription System Transition Notice</b></p><p>Beginning next Monday, our hospital network will officially transition to a fully digital electronic prescription (e-prescription) system. This modernization effort is designed to [33] medication errors caused by illegible handwriting. Doctors will input prescriptions directly into the patient database, [34] the transmission process to the pharmacy queue. Patients will no longer need to worry about losing physical paper prescriptions. However, during the initial weeks of implementation, we kindly ask for your [35] as our medical staff adjusts to the new interface. We assure you that this technology will [36] clinical safety and streamline your pharmacy pickup experience.</p>",
+    options: [
+      "jeopardize",
+      "enhance",
+      "recreate",
+      "limit"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'enhance' (ยกระดับ/ส่งเสริม) เพราะการเปลี่ยนใช้ระบบอิเล็กทรอนิกส์จะช่วยยกระดับความปลอดภัยทางคลินิก (clinical safety) และทำให้การรับยาสะดวกคล่องตัวขึ้น",
+    wrongExplanation: "ข้อ 1 คุกคาม/ทำให้เกิดความเสี่ยง (jeopardize) ขัดแย้งกับประโยชน์ความปลอดภัย; ข้อ 3 ทำขึ้นใหม่ (recreate); ข้อ 4 จำกัด (limit) ความปลอดภัยซึ่งไม่ใช่จุดประสงค์เทคโนโลยีการแพทย์",
+    mindset: "ศัพท์ในระดับสูงและยาก (Hard) มักทดสอบความหมายของคำว่ายกระดับสิ่งที่เป็นบวก (enhance) กับคำที่เป็นภัยคุกคาม (jeopardize)",
+    speedHack: " safety และ efficiency ในระบบสาธารณสุขต้องการคำกริยาที่แปลว่ายกระดับหรือส่งเสริม ('enhance')"
+  },
+  // Passage 2: Gut Health and Probiotics (Q37-Q40)
+  {
+    id: "T1-037",
+    difficulty: "Easy",
+    topic: "Gut Microbiome & Health",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 35s",
+    estimatedTime: 35,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [37].",
+    passage: "<p><b>The Gut Microbiome and Human Wellness</b></p><p>Modern research has revealed that the human digestive tract is home to trillions of microorganisms, collectively known as the gut microbiome. These tiny residents play an essential role in [37] food, synthesizing vital vitamins, and regulating the immune system. Maintaining a diverse ecosystem of beneficial bacteria is crucial; an imbalance, often caused by poor diet or antibiotic overuse, has been linked to various health [38]. To support gut wellness, health professionals frequently recommend consuming probiotics—living organisms found in fermented foods like yogurt and kimchi. Probiotics act by [39] the population of friendly microbes. However, consumers should consult a pharmacist before taking high-dose probiotic capsules, as certain strains may not be suitable for patients with [40] immune systems.</p>",
+    options: [
+      "digesting",
+      "destroying",
+      "freezing",
+      "tasting"
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) 'digesting' (การย่อย) เนื่องจากบทบาทพื้นฐานทางวิทยาศาสตร์ของจุลินทรีย์ในระบบทางเดินอาหารคือช่วยย่อยสลายและย่อยอาหาร (digesting food)",
+    wrongExplanation: "ข้อ 1 ทำลาย (destroying); ข้อ 2 แช่แข็ง (freezing); ข้อ 3 ชิมรสชาติ (tasting) ซึ่งขัดแย้งกับธรรมชาติการทำงานของแบคทีเรียในกระเพาะและลำไส้",
+    mindset: "คัดเลือกคำศัพท์พื้นฐานด้านวิทยาศาสตร์สุขภาพและสรีรวิทยาที่สอดคล้องกับอวัยวะและส่วนทางเดินอาหาร (digestive tract)",
+    speedHack: "คำค้นหาคือ 'digestive tract' (ทางเดินอาหาร) ย่อมทำหน้าที่เกี่ยวกับการย่อยอาหาร ('digesting food')"
+  },
+  {
+    id: "T1-038",
+    difficulty: "Medium",
+    topic: "Gut Microbiome & Health",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [38].",
+    passage: "<p><b>The Gut Microbiome and Human Wellness</b></p><p>Modern research has revealed that the human digestive tract is home to trillions of microorganisms, collectively known as the gut microbiome. These tiny residents play an essential role in [37] food, synthesizing vital vitamins, and regulating the immune system. Maintaining a diverse ecosystem of beneficial bacteria is crucial; an imbalance, often caused by poor diet or antibiotic overuse, has been linked to various health [38]. To support gut wellness, health professionals frequently recommend consuming probiotics—living organisms found in fermented foods like yogurt and kimchi. Probiotics act by [39] the population of friendly microbes. However, consumers should consult a pharmacist before taking high-dose probiotic capsules, as certain strains may not be suitable for patients with [40] immune systems.</p>",
+    options: [
+      "benefits",
+      "disorders",
+      "treatments",
+      "improvements"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'disorders' (ความผิดปกติ/โรคภัยไข้เจ็บ) เนื่องจากความไม่สมดุล (imbalance) ของจุลชีพในลำไส้เชื่อมโยงโดยตรงกับความผิดปกติและปัญหาสุขภาพต่างๆ",
+    wrongExplanation: "ข้อ 1 ประโยชน์ (benefits); ข้อ 3 วิธีการรักษา (treatments); ข้อ 4 การปรับปรุงดีขึ้น (improvements) ซึ่งทุกตัวเลือกมีความหมายเชิงบวกซึ่งขัดแย้งกับสาเหตุเชิงลบของคำว่า 'imbalance'",
+    mindset: "หลักการสอดคล้องของโทนประโยค (Tone consistency) คำที่เป็นลบ (imbalance, poor diet) ย่อมนำไปสู่ผลลัพธ์ที่เป็นลบต่อสุขภาพ (disorders)",
+    speedHack: "เห็นคำชี้เหตุผลลบอย่าง 'imbalance' และ 'poor diet' ตัดคำศัพท์เชิงบวกทิ้งให้หมด เหลือเพียง 'disorders'"
+  },
+  {
+    id: "T1-039",
+    difficulty: "Medium",
+    topic: "Gut Microbiome & Health",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [39].",
+    passage: "<p><b>The Gut Microbiome and Human Wellness</b></p><p>Modern research has revealed that the human digestive tract is home to trillions of microorganisms, collectively known as the gut microbiome. These tiny residents play an essential role in [37] food, synthesizing vital vitamins, and regulating the immune system. Maintaining a diverse ecosystem of beneficial bacteria is crucial; an imbalance, often caused by poor diet or antibiotic overuse, has been linked to various health [38]. To support gut wellness, health professionals frequently recommend consuming probiotics—living organisms found in fermented foods like yogurt and kimchi. Probiotics act by [39] the population of friendly microbes. However, consumers should consult a pharmacist before taking high-dose probiotic capsules, as certain strains may not be suitable for patients with [40] immune systems.</p>",
+    options: [
+      "suppressing",
+      "replenishing",
+      "limiting",
+      "calculating"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'replenishing' (เติมเต็ม/เพิ่มจำนวนชดเชย) เพราะจุลินทรีย์โปรไบโอติกจะเข้าไปทำหน้าที่เพิ่มจำนวนและฟื้นฟูประชากรจุลินทรีย์ที่เป็นมิตรในลำไส้ที่ลดหายไปให้กลับมาสมบูรณ์",
+    wrongExplanation: "ข้อ 1 ปราบปราม/กดทับ (suppressing); ข้อ 3 จำกัด (limiting); ข้อ 4 คำนวณ (calculating) ซึ่งไม่มีความหมายเชิงฟื้นฟูเสริมสร้างตามหน้าที่ของโปรไบโอติก",
+    mindset: "คำกริยาที่เหมาะสมกับการรักษาสมดุลร่างกายมักเกี่ยวกับความสมบูรณ์ การเพิ่มจำนวน หรือการช่วยฟื้นสภาพชดเชยส่วนที่ขาดหาย",
+    speedHack: "เป้าหมายของโปรไบโอติกคือไปเติมประชากรแบคทีเรียตัวดี เลือกคำศัพท์ที่เกี่ยวข้องกับการเติมเต็มหรือบำรุงซึ่งก็คือ 'replenishing'"
+  },
+  {
+    id: "T1-040",
+    difficulty: "Medium",
+    topic: "Gut Microbiome & Health",
+    section: "Text Completion",
+    partTitle: "PART 2: TEXT COMPLETION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "Medium",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Choose the best answer for blank [40].",
+    passage: "<p><b>The Gut Microbiome and Human Wellness</b></p><p>Modern research has revealed that the human digestive tract is home to trillions of microorganisms, collectively known as the gut microbiome. These tiny residents play an essential role in [37] food, synthesizing vital vitamins, and regulating the immune system. Maintaining a diverse ecosystem of beneficial bacteria is crucial; an imbalance, often caused by poor diet or antibiotic overuse, has been linked to various health [38]. To support gut wellness, health professionals frequently recommend consuming probiotics—living organisms found in fermented foods like yogurt and kimchi. Probiotics act by [39] the population of friendly microbes. However, consumers should consult a pharmacist before taking high-dose probiotic capsules, as certain strains may not be suitable for patients with [40] immune systems.</p>",
+    options: [
+      "hyperactive",
+      "compromised",
+      "standard",
+      "resistant"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 'compromised' (บกพร่อง/อ่อนแอ) ในทางการแพทย์ 'compromised immune system' หรือ 'immunocompromised' หมายถึงผู้ป่วยที่ระบบภูมิคุ้มกันร่างกายอ่อนแอหรือถูกทำลาย ซึ่งการทานแบคทีเรียมีชีวิตเข้าไปแม้จะเป็นจุลินทรีย์ที่ดีก็อาจก่ออันตรายเกิดการติดเชื้อในกระแสเลือดได้หากร่างกายต่อต้านไม่ไหว",
+    wrongExplanation: "ข้อ 1 ตอบสนองไวเกิน (hyperactive); ข้อ 3 มาตรฐานปกติ (standard); ข้อ 4 ต้านทานโรคได้ดี (resistant) ซึ่งกลุ่มภูมิคุ้มกันปกติหรือแข็งแรงไม่มีความจำเป็นต้องห้ามเชิงการแพทย์รุนแรงเท่ากลุ่มภูมิคุ้มกันบกพร่อง",
+    mindset: "คำเตือนความปลอดภัยทางเภสัชกรรมจะเน้นกลุ่มประชากรเสี่ยงสูง (High-risk populations) ซึ่งในเรื่องการรับจุลชีพมักระบุเจาะจงกลุ่มภูมิคุ้มกันบกพร่อง (compromised/weakened)",
+    speedHack: "วลีมาตรฐานทางการแพทย์เมื่อกล่าวถึงผู้ป่วยภูมิคุ้มกันต่ำ อ่อนแอ หรือเปราะบางคือ 'compromised immune systems'"
+  },
+
+  // --- PART 3: READING COMPREHENSION (Q41-Q54) ---
+  // Passage 1: Workplace Ergonomics Policy (Q41-Q44)
+  {
+    id: "T1-041",
+    difficulty: "Easy",
+    topic: "Workplace Policy",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 40s",
+    estimatedTime: 40,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "According to the policy memo, what is the primary objective of the new ergonomics guidelines?",
+    passage: "<p><b>MEMORANDUM</b></p><p><b>TO:</b> All Staff Members<br><b>FROM:</b> Occupational Health and Safety Committee<br><b>DATE:</b> June 10, 2026<br><b>SUBJECT:</b> Implementation of Workplace Ergonomics Policy</p><p>To promote health and minimize occupational injuries, the company is introducing mandatory ergonomics guidelines for all office workstations effective next month. Prolonged sitting and poor posture are major contributors to musculoskeletal disorders (MSDs), which account for over 40% of our employee sick leave requests last year. Under the new policy, the HR department will coordinate the distribution of adjustable office chairs and monitor stand mounts. Additionally, all employees are required to take a five-minute micro-break for stretching for every 60 minutes of continuous keyboard use. Supervisors will conduct bi-weekly audits to ensure compliance. Failure to adhere to these physical workstation adjustments may result in mandatory retraining sessions on occupational wellness.</p>",
+    options: [
+      "To increase working hours and keyboard speed of employees.",
+      "To promote health and reduce work-related musculoskeletal injuries among staff.",
+      "To inspect the price of office equipment in the database.",
+      "To replace human supervisors with automated monitoring systems."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ตรงกับประโยคเปิดของประกาศที่ระบุวัตถุประสงค์โดยตรง 'To promote health and minimize occupational injuries' และระบุถึงการป้องกันโรคระบบกล้ามเนื้อและกระดูก (musculoskeletal disorders - MSDs) ที่เกิดจากการทำงาน",
+    wrongExplanation: "ข้อ 1 เพิ่มชั่วโมงทำงานและพิมพ์เร็วขึ้น (ไม่มีระบุ); ข้อ 3 ตรวจสอบราคาอุปกรณ์; ข้อ 4 แทนที่หัวหน้าด้วยปัญญาประดิษฐ์ตรวจจับ ซึ่งล้วนบิดเบือนข้อมูลจากจดหมายเวียนอย่างสิ้นเชิง",
+    mindset: "โจทย์ระดับ Easy ของพาร์ทอ่านจะทดสอบการอ่านแบบจับประเด็นตรงตัว (Literal scanning) คำตอบมักซ่อนอยู่ในย่อหน้าแรกหรือประโยคแรกสุดของเอกสารทางการ",
+    speedHack: "จับคู่คีย์เวิร์ดในคำถาม 'primary objective' กับประโยคเปิดสุดของเรื่อง 'To promote health and minimize...'"
+  },
+  {
+    id: "T1-042",
+    difficulty: "Medium",
+    topic: "Workplace Policy",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 65s",
+    estimatedTime: 65,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Which of the following describes the responsibility of supervisors under this new policy?",
+    passage: "<p><b>MEMORANDUM</b></p><p><b>TO:</b> All Staff Members<br><b>FROM:</b> Occupational Health and Safety Committee<br><b>DATE:</b> June 10, 2026<br><b>SUBJECT:</b> Implementation of Workplace Ergonomics Policy</p><p>To promote health and minimize occupational injuries, the company is introducing mandatory ergonomics guidelines for all office workstations effective next month. Prolonged sitting and poor posture are major contributors to musculoskeletal disorders (MSDs), which account for over 40% of our employee sick leave requests last year. Under the new policy, the HR department will coordinate the distribution of adjustable office chairs and monitor stand mounts. Additionally, all employees are required to take a five-minute micro-break for stretching for every 60 minutes of continuous keyboard use. Supervisors will conduct bi-weekly audits to ensure compliance. Failure to adhere to these physical workstation adjustments may result in mandatory retraining sessions on occupational wellness.</p>",
+    options: [
+      "To purchase adjustable chairs for their team using their own budget.",
+      "To carry out bi-weekly audits to ensure team members are following the guidelines.",
+      "To provide medical therapy and drug treatments to injured employees.",
+      "To document and track employee keyboard typing speed."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากข้อความท้ายประกาศ 'Supervisors will conduct bi-weekly audits to ensure compliance.' หมายถึงหัวหน้างานมีหน้าที่สุ่มตรวจทุกๆ 2 สัปดาห์ เพื่อประเมินความสอดคล้องและการปฏิบัติตามกฎของลูกทีม",
+    wrongExplanation: "ข้อ 1 หัวหน้าซื้อเก้าอี้ด้วยงบตนเอง (โจทย์ระบุ HR เป็นคนแจกจ่าย); ข้อ 3 หัวหน้าทำกายภาพบำบัดจ่ายยาให้พนักงาน (ผิดบทบาทหน้าที่); ข้อ 4 ตรวจจับความเร็วการพิมพ์",
+    mindset: "พาร์ทอ่านระดับปานกลางจะวัดการแยกแยะบทบาทหน้าที่ (Roles & Responsibilities) ของตัวละครที่ระบุในประกาศอย่างชัดเจน ไม่เดาสับสนระหว่างแผนก",
+    speedHack: "กวาดสายตาหาคำนาม 'Supervisors' ในเนื้อเรื่อง แล้วอ่านข้อความรอบตัวมัน จะเจอ 'bi-weekly audits to ensure compliance'"
+  },
+  {
+    id: "T1-043",
+    difficulty: "Easy",
+    topic: "Workplace Policy",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 40s",
+    estimatedTime: 40,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What is required of employees who continuously use the keyboard for 60 minutes?",
+    passage: "<p><b>MEMORANDUM</b></p><p><b>TO:</b> All Staff Members<br><b>FROM:</b> Occupational Health and Safety Committee<br><b>DATE:</b> June 10, 2026<br><b>SUBJECT:</b> Implementation of Workplace Ergonomics Policy</p><p>To promote health and minimize occupational injuries, the company is introducing mandatory ergonomics guidelines for all office workstations effective next month. Prolonged sitting and poor posture are major contributors to musculoskeletal disorders (MSDs), which account for over 40% of our employee sick leave requests last year. Under the new policy, the HR department will coordinate the distribution of adjustable office chairs and monitor stand mounts. Additionally, all employees are required to take a five-minute micro-break for stretching for every 60 minutes of continuous keyboard use. Supervisors will conduct bi-weekly audits to ensure compliance. Failure to adhere to these physical workstation adjustments may result in mandatory retraining sessions on occupational wellness.</p>",
+    options: [
+      "They must write an email to the HR manager explaining their project status.",
+      "They are required to take a five-minute micro-break to stretch their body.",
+      "They must purchase a new monitor stand mount from the store.",
+      "They should submit a sick leave request form immediately."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากประโยค 'all employees are required to take a five-minute micro-break for stretching for every 60 minutes of continuous keyboard use' ตรงตัว",
+    wrongExplanation: "ข้ออื่นเป็นกิจกรรมที่ไม่สอดคล้องกับข้อบังคับเรื่องการพักยืดเหยียดร่างกายสั้นๆ 5 นาที",
+    mindset: "มองหาคีย์เวิร์ดตัวเลขและการจำกัดเวลา (Numbers and time limits) ซึ่งมักถูกใช้เป็นคำถามตรวจสอบข้อมูลตรงตัวในข้อสอบประเภทกึ่งประกาศทางราชการ/บริษัท",
+    speedHack: "สแกนหาตัวเลข '60' หรือ 'five-minute' ในบทอ่าน จะชี้พิกัดคำตอบได้ในเวลาไม่เกิน 5 วินาที"
+  },
+  {
+    id: "T1-044",
+    difficulty: "Hard",
+    topic: "Workplace Policy",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What consequence might employees face if they refuse to adjust their physical workstations according to the guidelines?",
+    passage: "<p><b>MEMORANDUM</b></p><p><b>TO:</b> All Staff Members<br><b>FROM:</b> Occupational Health and Safety Committee<br><b>DATE:</b> June 10, 2026<br><b>SUBJECT:</b> Implementation of Workplace Ergonomics Policy</p><p>To promote health and minimize occupational injuries, the company is introducing mandatory ergonomics guidelines for all office workstations effective next month. Prolonged sitting and poor posture are major contributors to musculoskeletal disorders (MSDs), which account for over 40% of our employee sick leave requests last year. Under the new policy, the HR department will coordinate the distribution of adjustable office chairs and monitor stand mounts. Additionally, all employees are required to take a five-minute micro-break for stretching for every 60 minutes of continuous keyboard use. Supervisors will conduct bi-weekly audits to ensure compliance. Failure to adhere to these physical workstation adjustments may result in mandatory retraining sessions on occupational wellness.</p>",
+    options: [
+      "An immediate reduction of their salary by 40%.",
+      "They will be forced to undergo mandatory retraining sessions on occupational wellness.",
+      "They will be terminated from the company without notice.",
+      "They must work from home indefinitely."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ประโยคสุดท้ายระบุไว้ชัดเจนว่า 'Failure to adhere to these physical workstation adjustments may result in mandatory retraining sessions on occupational wellness.' (หากไม่ปฏิบัติตามอาจส่งผลให้ต้องเข้ารับการฝึกอบรมภาคบังคับเกี่ยวกับการส่งเสริมสุขภาพ)",
+    wrongExplanation: "ข้อ 1 หักเงินเดือน 40% (ตัวเลข 40% ในเรื่องคือสถิติการลากิจลาป่วยปีที่แล้ว); ข้อ 3 ไล่ออกทันที; ข้อ 4 ให้ทำงานที่บ้านอย่างไม่มีกำหนด ซึ่งเป็นการตีความเกินความจริง",
+    mindset: "ข้อสอบระดับ Hard พยายามหลอกคนอ่านด้วยตัวเลขและข้อมูลที่ใกล้เคียงจากส่วนอื่นของบทอ่าน (เช่น นำ 40% มาหลอกเป็นตัวเลขหักเงินเดือน) ต้องอ่านเงื่อนไขความสัมพันธ์ของประโยคสุดท้ายให้ละเอียด",
+    speedHack: "มองหาคำบ่งชี้ผลลัพธ์ลบหรือบทลงโทษ เช่น 'Failure to...', 'result in...' ท้ายบทอ่าน จะพาไปยังคำว่า 'mandatory retraining'"
+  },
+  // Passage 2: Clinical Trial for Hypertension (Q45-Q49)
+  {
+    id: "T1-045",
+    difficulty: "Easy",
+    topic: "Clinical Trial Abstract",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 40s",
+    estimatedTime: 40,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What was the duration of the clinical trial described in the abstract?",
+    passage: "<p><b>CLINICAL STUDY ABSTRACT</b></p><p><b>Title:</b> Efficacy and Safety Profile of Cardiovax (CVX-90) in Moderate Hypertension Patients: A Randomized Double-Blind Placebo-Controlled Study.</p><p><b>Background:</b> Hypertension remains a primary risk factor for cardiovascular diseases globally. Current therapeutic options often carry side effects like persistent dry cough or peripheral edema, leading to poor patient compliance. CVX-90, a novel angiotensin receptor blocker, was evaluated over a 12-week period to assess blood pressure reduction efficacy and tolerability.</p><p><b>Methodology:</b> A cohort of 350 adult patients with systolic blood pressure between 140-159 mmHg was randomized into two groups. Group A (n=175) received 20 mg of CVX-90 daily, while Group B (n=175) received a matching placebo. Continuous ambulatory blood pressure monitoring was utilized.</p><p><b>Results:</b> At week 12, Group A demonstrated a statistically significant mean reduction in systolic blood pressure (-14.2 mmHg) compared to Group B (-2.5 mmHg, p < 0.001). Adverse events were mild; transient dizziness was reported in 4% of CVX-90 patients, with no reports of dry cough or edema. Compliance remained exceptionally high at 98.2% throughout the evaluation.</p>",
+    options: [
+      "350 days",
+      "12 weeks",
+      "4 months",
+      "2 years"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ระบุอยู่ในย่อหน้า Background ประโยคสุดท้าย 'evaluated over a 12-week period' และยืนยันผลการตรวจวัดในพาร์ทผลลัพธ์ที่สัปดาห์ที่ 12",
+    wrongExplanation: "ข้อ 1 ตัวเลข 350 คือจำนวนคนไข้เข้าร่วมโครงการ (350 patients); ข้อ 3 และ 4 ไม่ตรงกับระยะเวลา 12 สัปดาห์ (ประมาณ 3 เดือน) ที่ระบุในงานวิจัย",
+    mindset: "บทอ่านที่เป็นงานวิจัยทางวิทยาศาสตร์การแพทย์ (Clinical studies) ต้องการการสแกนหาข้อเท็จจริงพื้นฐานอย่างรวดเร็ว เช่น จำนวนผู้เข้าร่วม ระยะเวลาการทดลอง และวิธีการแบ่งกลุ่มควบคุม",
+    speedHack: "หาระยะเวลาเชิงเวลา เช่น 'weeks', 'months', 'period' จะพบข้อมูล '12-week period' ได้อย่างง่ายดาย"
+  },
+  {
+    id: "T1-046",
+    difficulty: "Medium",
+    topic: "Clinical Trial Abstract",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "According to the abstract, what advantage does CVX-90 potentially offer over some existing blood pressure medications?",
+    passage: "<p><b>CLINICAL STUDY ABSTRACT</b></p><p><b>Title:</b> Efficacy and Safety Profile of Cardiovax (CVX-90) in Moderate Hypertension Patients: A Randomized Double-Blind Placebo-Controlled Study.</p><p><b>Background:</b> Hypertension remains a primary risk factor for cardiovascular diseases globally. Current therapeutic options often carry side effects like persistent dry cough or peripheral edema, leading to poor patient compliance. CVX-90, a novel angiotensin receptor blocker, was evaluated over a 12-week period to assess blood pressure reduction efficacy and tolerability.</p><p><b>Methodology:</b> A cohort of 350 adult patients with systolic blood pressure between 140-159 mmHg was randomized into two groups. Group A (n=175) received 20 mg of CVX-90 daily, while Group B (n=175) received a matching placebo. Continuous ambulatory blood pressure monitoring was utilized.</p><p><b>Results:</b> At week 12, Group A demonstrated a statistically significant mean reduction in systolic blood pressure (-14.2 mmHg) compared to Group B (-2.5 mmHg, p < 0.001). Adverse events were mild; transient dizziness was reported in 4% of CVX-90 patients, with no reports of dry cough or edema. Compliance remained exceptionally high at 98.2% throughout the evaluation.</p>",
+    options: [
+      "It is much cheaper than standard placebo drugs.",
+      "It does not cause dry cough or peripheral swelling (edema), which are common side effects of other treatments.",
+      "It cures cardiovascular disease permanently in one dose.",
+      "It can be taken without water or prescription."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 บทคัดย่อชี้ว่ายากลุ่มเดิมมักมีผลข้างเคียงคือไอแห้งเรื้อรัง (dry cough) หรือบวมน้ำบริเวณปลายมือปลายเท้า (peripheral edema) ซึ่งทำให้คนไข้ไม่อยากทานยา แต่ผลลัพธ์ของ CVX-90 พบว่าไม่มีรายงานอาการไอแห้งหรือบวมน้ำเลย (no reports of dry cough or edema) จึงเป็นข้อได้เปรียบสำคัญเรื่องความทนทานต่อยา",
+    wrongExplanation: "ข้อ 1 ยาหลอก (placebo) ไม่มีมูลค่าเปรียบเทียบในแง่ราคาการรักษา; ข้อ 3 อ้างเกินจริงว่ารักษาขาดในโดสเดียว; ข้อ 4 ข้อมูลการไม่ต้องใช้ใบสั่งยาไม่ได้รับการกล่าวถึงและขัดหลักการวิจัยยาความดัน",
+    mindset: "พิจารณาปัญหาก่อนหน้า (Background problem) และผลการวิจัย (Results) เพื่อวิเคราะห์ข้อดีสัมพัทธ์ (Relative advantages) ของยาใหม่ที่เป็นนวัตกรรม",
+    speedHack: "จับคู่ปัญหายาตัวเดิม 'dry cough, edema' กับผลลัพธ์ยาตัวใหม่ 'no reports of dry cough or edema' เป็นจุดขายสำคัญของยานี้"
+  },
+  {
+    id: "T1-047",
+    difficulty: "Medium",
+    topic: "Clinical Trial Abstract",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What was the purpose of administering a matching placebo to Group B?",
+    passage: "<p><b>CLINICAL STUDY ABSTRACT</b></p><p><b>Title:</b> Efficacy and Safety Profile of Cardiovax (CVX-90) in Moderate Hypertension Patients: A Randomized Double-Blind Placebo-Controlled Study.</p><p><b>Background:</b> Hypertension remains a primary risk factor for cardiovascular diseases globally. Current therapeutic options often carry side effects like persistent dry cough or peripheral edema, leading to poor patient compliance. CVX-90, a novel angiotensin receptor blocker, was evaluated over a 12-week period to assess blood pressure reduction efficacy and tolerability.</p><p><b>Methodology:</b> A cohort of 350 adult patients with systolic blood pressure between 140-159 mmHg was randomized into two groups. Group A (n=175) received 20 mg of CVX-90 daily, while Group B (n=175) received a matching placebo. Continuous ambulatory blood pressure monitoring was utilized.</p><p><b>Results:</b> At week 12, Group A demonstrated a statistically significant mean reduction in systolic blood pressure (-14.2 mmHg) compared to Group B (-2.5 mmHg, p < 0.001). Adverse events were mild; transient dizziness was reported in 4% of CVX-90 patients, with no reports of dry cough or edema. Compliance remained exceptionally high at 98.2% throughout the evaluation.</p>",
+    options: [
+      "To save the researchers money on active medicine.",
+      "To serve as a baseline comparison group to control for the psychological placebo effect and natural variations.",
+      "To give Group B patients a vitamin supplement.",
+      "To test if Group B patients would demand more active pills."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ตามหลักการทดลองทางคลินิกแบบสุ่มและมีกลุ่มควบคุมด้วยยาหลอก (Randomized Placebo-Controlled Study) หน้าที่ของยาหลอก (placebo) คือทำหน้าที่เป็นกลุ่มควบคุมอ้างอิงเทียบเคียงเพื่อตัดอิทธิพลด้านจิตวิทยา การเปลี่ยนแปลงตามธรรมชาติ หรือปัจจัยกวนภายนอกอื่นๆ ออกไป",
+    wrongExplanation: "ข้ออื่นเป็นเหตุผลที่ไม่เป็นวิทยาศาสตร์และขัดกับจริยธรรมระเบียบวิธีวิจัยมาตรฐานสากล",
+    mindset: "โจทย์ประยุกต์ความรู้เชิงวิจัย (Research methodology) ต้องการความเข้าใจคอนเซ็ปต์ทางวิทยาศาสตร์ขั้นพื้นฐานเกี่ยวกับการออกแบบการทดลองควบคุม (Control groups)",
+    speedHack: "ตามนิยามวิทยาศาสตร์ Placebo = control/comparison group เสมอ เลือกข้อที่อธิบายเรื่อง 'baseline comparison' หรือ 'control'"
+  },
+  {
+    id: "T1-048",
+    difficulty: "Hard",
+    topic: "Clinical Trial Abstract",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 80s",
+    estimatedTime: 80,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Which of the following statements about the clinical study results is true?",
+    passage: "<p><b>CLINICAL STUDY ABSTRACT</b></p><p><b>Title:</b> Efficacy and Safety Profile of Cardiovax (CVX-90) in Moderate Hypertension Patients: A Randomized Double-Blind Placebo-Controlled Study.</p><p><b>Background:</b> Hypertension remains a primary risk factor for cardiovascular diseases globally. Current therapeutic options often carry side effects like persistent dry cough or peripheral edema, leading to poor patient compliance. CVX-90, a novel angiotensin receptor blocker, was evaluated over a 12-week period to assess blood pressure reduction efficacy and tolerability.</p><p><b>Methodology:</b> A cohort of 350 adult patients with systolic blood pressure between 140-159 mmHg was randomized into two groups. Group A (n=175) received 20 mg of CVX-90 daily, while Group B (n=175) received a matching placebo. Continuous ambulatory blood pressure monitoring was utilized.</p><p><b>Results:</b> At week 12, Group A demonstrated a statistically significant mean reduction in systolic blood pressure (-14.2 mmHg) compared to Group B (-2.5 mmHg, p < 0.001). Adverse events were mild; transient dizziness was reported in 4% of CVX-90 patients, with no reports of dry cough or edema. Compliance remained exceptionally high at 98.2% throughout the evaluation.</p>",
+    options: [
+      "Placebo users experienced a greater decrease in systolic blood pressure than CVX-90 users.",
+      "CVX-90 caused transient dizziness in a small minority of patients, but overall compliance remained high.",
+      "The study was canceled early due to severe side effects in all patients.",
+      "There was no statistical difference in efficacy between Group A and Group B."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากข้อมูลใน Results: ยาทำให้เกิดอาการเวียนศีรษะชั่วคราว (transient dizziness) เพียง 4% ของผู้ใช้ (ซึ่งถือเป็นส่วนน้อยมาก/minority) และอัตราการกินยาครบตามกำหนดเฉลี่ยสูงถึง 98.2% แสดงถึงการยอมรับความทนทานต่อยาที่ดีเยี่ยม",
+    wrongExplanation: "ข้อ 1 ผลลัพธ์ตรงข้ามกลุ่มยาจริงลดได้มากกว่า (-14.2 vs -2.5); ข้อ 3 วิจัยไม่เคยถูกยกเลิกและการปฏิบัติตามยาสูงมาก; ข้อ 4 มีความแตกต่างอย่างมีนัยสำคัญทางสถิติสูงมาก (p < 0.001)",
+    mindset: "โจทย์ประเภท True/False ในระดับ Hard ต้องการความแม่นยำในการตีความข้อความเชิงสถิติและเปรียบเทียบความสัมพันธ์ของตัวเลขในกลุ่มตัวอย่างสองกลุ่มอย่างรอบคอบ",
+    speedHack: "ตัดข้อที่ขัดแย้งกับตัวเลขเชิงประจักษ์ในบทอ่านโดยตรง เช่น 'greater decrease in placebo' หรือ 'no statistical difference' ทิ้งไป"
+  },
+  {
+    id: "T1-049",
+    difficulty: "Hard",
+    topic: "Clinical Trial Abstract",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 80s",
+    estimatedTime: 80,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What can be inferred about patient compliance based on the study findings?",
+    passage: "<p><b>CLINICAL STUDY ABSTRACT</b></p><p><b>Title:</b> Efficacy and Safety Profile of Cardiovax (CVX-90) in Moderate Hypertension Patients: A Randomized Double-Blind Placebo-Controlled Study.</p><p><b>Background:</b> Hypertension remains a primary risk factor for cardiovascular diseases globally. Current therapeutic options often carry side effects like persistent dry cough or peripheral edema, leading to poor patient compliance. CVX-90, a novel angiotensin receptor blocker, was evaluated over a 12-week period to assess blood pressure reduction efficacy and tolerability.</p><p><b>Methodology:</b> A cohort of 350 adult patients with systolic blood pressure between 140-159 mmHg was randomized into two groups. Group A (n=175) received 20 mg of CVX-90 daily, while Group B (n=175) received a matching placebo. Continuous ambulatory blood pressure monitoring was utilized.</p><p><b>Results:</b> At week 12, Group A demonstrated a statistically significant mean reduction in systolic blood pressure (-14.2 mmHg) compared to Group B (-2.5 mmHg, p < 0.001). Adverse events were mild; transient dizziness was reported in 4% of CVX-90 patients, with no reports of dry cough or edema. Compliance remained exceptionally high at 98.2% throughout the evaluation.</p>",
+    options: [
+      "The side effect of dizziness forced most patients to drop out of the study early.",
+      "The absence of cough and edema symptoms likely contributed to the high compliance rate.",
+      "Compliance was low because patients found the daily dosing regimen too complicated.",
+      "Patients in the placebo group had much higher compliance than the active group."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 การเชื่อมโยงเหตุผล (Inference) พบว่าเนื่องจาก CVX-90 ไม่มีรายงานผลข้างเคียงยอดฮิตที่สร้างความรำคาญใจให้ผู้ป่วยอย่างไอแห้ง (cough) หรืออาการบวม (edema) จึงเป็นปัจจัยหลักทางตรงและอ้อมที่ทำให้ผู้ป่วยเต็มใจทานยาต่อเนื่องและควบคุมวินัยได้สูงถึง 98.2%",
+    wrongExplanation: "ข้อ 1 อาการเวียนหัวไม่ได้ทำให้คนเลิกกินยาจำนวนมากเนื่องจากอัตราดรอปเอาต์ไม่ได้ระบุและเปอร์เซ็นต์ทานยาสูงมาก; ข้อ 3 ความซับซ้อนโดสเดียววันละครั้งถือว่าทานง่าย; ข้อ 4 ไม่มีการเปรียบเทียบอัตราความร่วมมือต่างกันระหว่างสองกลุ่มจนมีนัยสำคัญลบ",
+    mindset: "ทักษะการอนุมาน (Inference skills) ให้มองหาความเชื่อมโยงเชิงสาเหตุและผลลัพธ์ (Cause-and-effect relationship) ที่มีหลักการทางการแพทย์สนับสนุนแต่ไม่ได้รับเขียนเขียนตรงตัวคำต่อคำในบทความ",
+    speedHack: "เชื่อมคีย์เวิร์ด 'Background: side effects lead to poor compliance' เข้ากับ 'Results: no side effects, high compliance (98.2%)' จะนำไปสู่ข้อสรุปเรื่องความสัมพันธ์นี้ทันที"
+  },
+  // Passage 3: Product Recall Announcement (Q50-Q54)
+  {
+    id: "T1-050",
+    difficulty: "Easy",
+    topic: "Product Recall Notice",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 45s",
+    estimatedTime: 45,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Which product is being recalled according to the safety notice?",
+    passage: "<p><b>URGENT PHARMACEUTICAL RECALL NOTICE</b></p><p><b>Issuer:</b> Apex Pharmaceuticals Inc.<br><b>Affected Product:</b> Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)<br><b>Reason:</b> Trace chemical contamination.</p><p>Apex Pharmaceuticals is initiating a voluntary Class II recall of the drug batch LP-2026-X8 of Lisinopril 10 mg tablets. Routine quality control testing revealed trace amounts of a nitrosamine impurity, which exceeded the acceptable daily limit set by the FDA. Nitrosamines are classified as probable human carcinogens based on laboratory tests. To date, Apex has not received any reports of adverse clinical events related to this recall. Patients currently taking this batch should not discontinue their medication abruptly, as untreated hypertension poses immediate cardiovascular risks. Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch or alternative prescription. Distributors are instructed to quarantine the affected inventory and return it to the company for credit.</p>",
+    options: [
+      "Apex Nitrosamine Impurity Capsules",
+      "Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)",
+      "FDA acceptable blood pressure monitors",
+      "All cardiovascular medicines manufactured in 2026"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 ระบุอยู่ในบรรทัดแรกๆ ของจดหมายแจ้งเตือน Affected Product: Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8) อย่างเจาะจงและเป็นลายลักษณ์อักษร",
+    wrongExplanation: "ข้อ 1 ชื่อของสิ่งปนเปื้อนไม่ใช่ผลิตภัณฑ์หลัก; ข้อ 3 เครื่องตรวจวัดความดัน; ข้อ 4 ยาหัวใจทุกตัวในปี 2569 ซึ่งเป็นการเหมารวมกว้างเกินไป",
+    mindset: "พาร์ทจับประเด็นระบุข้อมูลชี้เฉพาะของสินค้าอุตสาหกรรมสุขภาพ ต้องตรวจสอบรหัสชุดข้อมูลและ Batch Number ให้สมบูรณ์ห้ามเลือกตัวเลือกเหมารวม",
+    speedHack: "กวาดตาอ่านช่อง 'Affected Product:' ตรงหัวเอกสารจะดึงคำตอบออกมาได้ทันที"
+  },
+  {
+    id: "T1-051",
+    difficulty: "Medium",
+    topic: "Product Recall Notice",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Why is Apex Pharmaceuticals recalling this specific batch of medication?",
+    passage: "<p><b>URGENT PHARMACEUTICAL RECALL NOTICE</b></p><p><b>Issuer:</b> Apex Pharmaceuticals Inc.<br><b>Affected Product:</b> Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)<br><b>Reason:</b> Trace chemical contamination.</p><p>Apex Pharmaceuticals is initiating a voluntary Class II recall of the drug batch LP-2026-X8 of Lisinopril 10 mg tablets. Routine quality control testing revealed trace amounts of a nitrosamine impurity, which exceeded the acceptable daily limit set by the FDA. Nitrosamines are classified as probable human carcinogens based on laboratory tests. To date, Apex has not received any reports of adverse clinical events related to this recall. Patients currently taking this batch should not discontinue their medication abruptly, as untreated hypertension poses immediate cardiovascular risks. Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch or alternative prescription. Distributors are instructed to quarantine the affected inventory and return it to the company for credit.</p>",
+    options: [
+      "Because the tablets were expired and no longer effective.",
+      "Due to the detection of a nitrosamine impurity that exceeds the FDA's acceptable daily limits.",
+      "Because the tablets were packaged in the wrong color boxes.",
+      "Following reports of severe cardiovascular events in patients using the drug."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากเหตุผลในจดหมาย: การตรวจสอบการควบคุมคุณภาพตามรอบพบสารปนเปื้อนกลุ่มไนโตรซามีน (nitrosamine impurity) ในปริมาณเกินเกณฑ์มาตรฐานที่ยอมรับได้รายวันขององค์การอาหารและยา (FDA)",
+    wrongExplanation: "ข้อ 1 ยาหมดอายุ (ไม่ใช่เหตุผลที่แจ้ง); ข้อ 3 กล่องสลับสี; ข้อ 4 มีรายงานผู้ป่วยเสียชีวิตหรือเป็นโรคหัวใจรุนแรง (ข้อความระบุตรงกันข้ามว่ายังไม่มีรายงานผลข้างเคียงเข้ามา: To date, Apex has not received any reports...)",
+    mindset: "แยกแยะข้อเท็จจริง (Facts) ออกจากข้ออ้างหลอก โดยเฉพาะจุดประสงค์ของจดหมายชี้ตัวการทางเคมีและมลพิษทางยาที่เป็นต้นเหตุ",
+    speedHack: "มองหาคีย์เวิร์ดทางเคมี 'nitrosamine' และเกณฑ์ควบคุม 'FDA acceptable daily limit' ในเรื่องเพื่อยืนยันเหตุผล"
+  },
+  {
+    id: "T1-052",
+    difficulty: "Medium",
+    topic: "Product Recall Notice",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What are nitrosamines, based on the text?",
+    passage: "<p><b>URGENT PHARMACEUTICAL RECALL NOTICE</b></p><p><b>Issuer:</b> Apex Pharmaceuticals Inc.<br><b>Affected Product:</b> Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)<br><b>Reason:</b> Trace chemical contamination.</p><p>Apex Pharmaceuticals is initiating a voluntary Class II recall of the drug batch LP-2026-X8 of Lisinopril 10 mg tablets. Routine quality control testing revealed trace amounts of a nitrosamine impurity, which exceeded the acceptable daily limit set by the FDA. Nitrosamines are classified as probable human carcinogens based on laboratory tests. To date, Apex has not received any reports of adverse clinical events related to this recall. Patients currently taking this batch should not discontinue their medication abruptly, as untreated hypertension poses immediate cardiovascular risks. Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch or alternative prescription. Distributors are instructed to quarantine the affected inventory and return it to the company for credit.</p>",
+    options: [
+      "Useful active pharmaceutical ingredients for high blood pressure.",
+      "Chemical substances classified as probable human carcinogens based on lab tests.",
+      "A type of FDA-approved vitamin commonly added to tablets.",
+      "Non-toxic packaging materials used for shipping medicines."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อ้างอิงประโยค 'Nitrosamines are classified as probable human carcinogens based on laboratory tests.' (สารไนโตรซามีนจัดเป็นสารที่น่าจะก่อให้เกิดมะเร็งในมนุษย์จากการทดสอบในห้องทดลอง)",
+    wrongExplanation: "ข้อ 1 สารออกฤทธิ์ลดความดัน; ข้อ 3 วิตามินเสริมสร้างสุขภาพ; ข้อ 4 พลาสติกบรรจุภัณฑ์ขนส่ง ซึ่งล้วนแต่อธิบายความหมายที่ไม่ถูกต้องและเป็นอันตราย",
+    mindset: "โจทย์วัดนิยามคำศัพท์เฉพาะ (Vocabulary in Context) สกัดความหมายจากตำแหน่งที่โจทย์ขยายคำศัพท์คำนั้นโดยตรง",
+    speedHack: "หาประโยคที่ขึ้นต้นหรือนิยามคำว่า 'Nitrosamines are...' จะเจอคำตามหลังตรงกับตัวเลือกข้อสอง 'classified as probable human carcinogens'"
+  },
+  {
+    id: "T1-053",
+    difficulty: "Medium",
+    topic: "Product Recall Notice",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 70s",
+    estimatedTime: 70,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What warning is given to patients currently taking the affected batch?",
+    passage: "<p><b>URGENT PHARMACEUTICAL RECALL NOTICE</b></p><p><b>Issuer:</b> Apex Pharmaceuticals Inc.<br><b>Affected Product:</b> Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)<br><b>Reason:</b> Trace chemical contamination.</p><p>Apex Pharmaceuticals is initiating a voluntary Class II recall of the drug batch LP-2026-X8 of Lisinopril 10 mg tablets. Routine quality control testing revealed trace amounts of a nitrosamine impurity, which exceeded the acceptable daily limit set by the FDA. Nitrosamines are classified as probable human carcinogens based on laboratory tests. To date, Apex has not received any reports of adverse clinical events related to this recall. Patients currently taking this batch should not discontinue their medication abruptly, as untreated hypertension poses immediate cardiovascular risks. Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch or alternative prescription. Distributors are instructed to quarantine the affected inventory and return it to the company for credit.</p>",
+    options: [
+      "They must double their dosage to neutralize the contamination.",
+      "They should not stop taking their medication abruptly and should seek a replacement batch or alternative script immediately.",
+      "They must return the medicine to the company directly by mail.",
+      "They should drink abundant water to flush out the lisinopril chemical."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากใจความคำแนะนำผู้ป่วย 'Patients currently taking this batch should not discontinue their medication abruptly... Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch...' เนื่องจากความดันโลหิตอาจพุ่งสูงฉับพลันก่อให้เกิดอันตรายถึงชีวิตได้หากหยุดยาทันที",
+    wrongExplanation: "ข้อ 1 ทานยาเพิ่มสองเท่า (เร่งอันตรายทั้งจากสารปนเปื้อนและยา); ข้อ 3 ส่งคืนทางไปรษณีย์ด้วยตนเอง; ข้อ 4 ดื่มน้ำมากๆ เพื่อขับสารล้างพิษ ซึ่งเป็นความเชื่อนอกเหนือคำเตือนแพทย์",
+    mindset: "การจัดการความกังวลผู้ป่วยและลดความเสี่ยงจากการถอนยาความดันโลหิตฉับพลัน (Rebound hypertension) เป็นข้อปฏิบัติและจุดเน้นของความปลอดภัยผู้ป่วยที่ต้องการการตระหนักรู้ขั้นสูง",
+    speedHack: "มองประโยคเตือนสำคัญ 'should not discontinue... abruptly' สอดรับโดยตรงกับตัวเลือกข้อสอง"
+  },
+  {
+    id: "T1-054",
+    difficulty: "Hard",
+    topic: "Product Recall Notice",
+    section: "Reading",
+    partTitle: "PART 3: READING COMPREHENSION",
+    suggestedTime: "Suggested Time: 80s",
+    estimatedTime: 80,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "What instruction is given to distributors regarding the affected lisinopril inventory?",
+    passage: "<p><b>URGENT PHARMACEUTICAL RECALL NOTICE</b></p><p><b>Issuer:</b> Apex Pharmaceuticals Inc.<br><b>Affected Product:</b> Lisinopril 10 mg Tablets (Batch Number: LP-2026-X8)<br><b>Reason:</b> Trace chemical contamination.</p><p>Apex Pharmaceuticals is initiating a voluntary Class II recall of the drug batch LP-2026-X8 of Lisinopril 10 mg tablets. Routine quality control testing revealed trace amounts of a nitrosamine impurity, which exceeded the acceptable daily limit set by the FDA. Nitrosamines are classified as probable human carcinogens based on laboratory tests. To date, Apex has not received any reports of adverse clinical events related to this recall. Patients currently taking this batch should not discontinue their medication abruptly, as untreated hypertension poses immediate cardiovascular risks. Instead, they should contact their doctor or pharmacist immediately to obtain a replacement batch or alternative prescription. Distributors are instructed to quarantine the affected inventory and return it to the company for credit.</p>",
+    options: [
+      "They must sell the inventory to other international markets quickly.",
+      "They are instructed to quarantine the affected stock and return it to the company for credit.",
+      "They must destroy the inventory on-site and bear all financial losses.",
+      "They should repackage the tablets under a different name."
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 2 อิงจากประโยคสุดท้ายของ safety recall: 'Distributors are instructed to quarantine the affected inventory and return it to the company for credit.' (ผู้จัดจำหน่ายต้องแยกกักกันสินค้าที่มีปัญหาออกจากคลังสินค้าปกติ และส่งคืนบริษัทเพื่อขอเครดิตเงินคืน)",
+    wrongExplanation: "ข้อ 1 นำไปขายต่อตลาดโลก (ผิดจริยธรรมร้ายแรง); ข้อ 3 ทำลายเองและแบกรับผลขาดทุนทั้งหมด (โจทย์ระบุให้ส่งคืนเพื่อรับเครดิตคืนเงิน); ข้อ 4 เปลี่ยนชื่อใหม่บรรจุภัณฑ์ใหม่มาขายต่อ (อาชญากรรมทางยา)",
+    mindset: "ข้อบังคับด้านการส่งคืนสินค้าและห่วงโซ่อุปทานยาที่มีปัญหา (Reverse logistics) ในระดับบริหาร ต้องมีความโปร่งใส การกักกันโรคและควบคุมสินค้าปนเปื้อนเป็นสิ่งสำคัญสูงสุด",
+    speedHack: "กวาดตาดูที่ประโยคสุดท้ายซึ่งมีประธานคือ 'Distributors' คีย์เวิร์ดตรงกับ 'quarantine' และ 'return for credit'"
+  },
+
+  // --- PART 4: GRAMMAR IN CONTEXT (Q55-Q60) ---
+  {
+    id: "T1-055",
+    difficulty: "Easy",
+    topic: "Subject-Verb Agreement",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 35s",
+    estimatedTime: 35,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "The clinical database, which contains records of over ten thousand cardiac patients, [55] updated automatically at the end of each business day.",
+    passage: null,
+    options: [
+      "is",
+      "are",
+      "were",
+      "being"
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) 'is' เนื่องจากประธานหลักของประโยคนี้คือ 'The clinical database' ซึ่งเป็นคำนามเอกพจน์บุรุษที่ 3 ส่วนวลีขยาย 'which contains records of over ten thousand cardiac patients' มีความหมายขยายเพิ่มแต่ไม่ได้เปลี่ยนสถานะประธาน และประโยคแสดงข้อเท็จจริงทั่วไป (Present Simple Active/Passive) จึงใช้กริยาช่วยเอกพจน์คือ 'is'",
+    wrongExplanation: "ข้อ 1 'are' และ ข้อ 2 'were' เป็นกริยาพหูพจน์ซึ่งขัดกับประธานเอกพจน์ 'database'; ข้อ 3 'being' เป็นรูป Present Participle ก่อโครงสร้างประโยคกริยาไม่แท้ทำให้ประโยคขาดกริยาแท้ของประธานหลัก",
+    mindset: "ไวยากรณ์ Subject-Verb Agreement ในโจทย์ TGAT มักแทรกตัวลวง (Distractor) เป็นคำนามพหูพจน์ไว้หน้าคำกริยา (เช่น patients) เพื่อให้นักเรียนเข้าใจผิดว่าประธานเป็นพหูพจน์ ต้องสกัดเอาประธานตัวจริงหน้าเครื่องหมาย comma แรกมาใช้พิจารณาเสมอ",
+    speedHack: "ข้ามส่วนขยายระบายระหว่างเครื่องหมาย comma สองตัวออกชั่วคราว: 'The clinical database... [55] updated...' จะทำให้เลือกกริยาเอกพจน์อย่าง 'is' ได้ทันที"
+  },
+  {
+    id: "T1-056",
+    difficulty: "Medium",
+    topic: "Participle Modifiers",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 60s",
+    estimatedTime: 60,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "[56] by the sudden increase in pharmacy walk-in patients, the pharmacist on duty decided to open an additional dispensing counter.",
+    passage: null,
+    options: [
+      "Overwhelmed",
+      "Overwhelming",
+      "Overwhelms",
+      "To overwhelm"
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) 'Overwhelmed' ประโยคโครงสร้างแบบลดรูปอิงประธานหลักคือ 'the pharmacist on duty' ซึ่งมีสถานะเป็นผู้ถูกกระทำให้รู้สึกเหนื่อยล้าหรือรับมือไม่ทัน (Passive feeling) จากการเพิ่มขึ้นของคนไข้ จึงต้องใช้ Past Participle (-ed) ขยายประโยคต้น",
+    wrongExplanation: "ข้อ 1 'Overwhelming' (กระทำเอง/เป็นผู้สร้างความรู้สึกหนักใจ) ขัดแย้งกับหลักความจริงของตัวละครที่เป็นเภสัชกร; ข้อ 2 'Overwhelms' เป็นรูปกริยาแท้ผันตาม Tense ทำให้ขาดคำเชื่อมในโครงสร้างประโยคซ้อน; ข้อ 3 'To overwhelm' แสดงจุดประสงค์ขัดแย้งความหมาย",
+    mindset: "การลดรูปประธานในวลีนำ (Participle Clauses) หากตัวประธานหลักหลัง comma เป็นคนและรับความรู้สึกจากปัจจัยภายนอก ให้เลือกใช้ V-ed (เช่น overwhelmed, excited, embarrassed) เสมอ",
+    speedHack: "วิเคราะห์ประธานหลัง comma 'the pharmacist' (เภสัชกร) ตัวเขา 'ถูกรุมกระหน่ำ/รู้สึกท่วมท้น' โดยปริมาณคนไข้ที่เพิ่มขึ้น ดังนั้นตัดคลาส -ing ทิ้งไปและเลือก V-ed 'Overwhelmed'"
+  },
+  {
+    id: "T1-057",
+    difficulty: "Easy",
+    topic: "Prepositions",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 30s",
+    estimatedTime: 30,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Patients who are allergic [57] penicillin must inform the clinical staff immediately during registration to ensure safe prescribing.",
+    passage: null,
+    options: [
+      "with",
+      "to",
+      "for",
+      "against"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) 'to' เนื่องจากคำคุณศัพท์ 'allergic' (แพ้) มีโครงสร้างคำบุพบทเฉพาะคู่เคียง (Collocation) คือ 'allergic to [something]' หมายถึง แพ้ต่อสารเคมี ยา หรืออาหารบางชนิด",
+    wrongExplanation: "ข้ออื่น 'allergic with', 'allergic for', 'allergic against' ไม่เป็นไปตามหลักการจับคู่คำบุพบทมาตรฐานภาษาอังกฤษ (Collocations)",
+    mindset: "จดจำคำคู่เคียงยอดนิยมในการสอบ TGAT และการสอบสากลทั่วไป กลุ่มคำกริยาคุณศัพท์ด้านสุขภาพมักมีบุพบทเฉพาะยึดเหนี่ยวเป็นโครงสร้างตายตัว",
+    speedHack: "เจอคำว่า 'allergic' สแกนสายตาหา 'to' ทันทีโดยไม่ต้องอ่านข้ออื่น สะดวก แม่นยำ และประหยัดเวลาสอบ"
+  },
+  {
+    id: "T1-058",
+    difficulty: "Medium",
+    topic: "Relative Pronouns",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 65s",
+    estimatedTime: 65,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "We have finalized the recruitment process for the clinical research associate, [58] credentials align perfectly with our pharmaceutical testing standards.",
+    passage: null,
+    options: [
+      "who",
+      "whom",
+      "whose",
+      "which"
+    ],
+    answer: 2,
+    correctExplanation: "ตอบข้อ 2 'whose' เนื่องจากเป็นการเชื่อมประโยคขยายความแสดงความเป็นเจ้าของ (Possessive relative pronoun) ของคำนาม 'credentials' (เอกสารแสดงคุณวุฒิ/ใบรับรอง) ของผู้สมัครตำแหน่ง 'clinical research associate'",
+    wrongExplanation: "ข้อ 0 'who' ทำหน้าที่แทนประธาน; ข้อ 1 'whom' ทำหน้าที่แทนกรรม; ข้อ 3 'which' ทำหน้าที่แทนสิ่งของ/สัตว์ ซึ่งไม่ตรงกับความสัมพันธ์แสดงความเป็นเจ้าของประวัติผลงานวิจัยของบุคคลนี้",
+    mindset: "วิเคราะห์ความสัมพันธ์ของคำนามข้างหลังช่องว่าง หากคำนามนั้นเป็นของคำนามข้างหน้าช่องว่าง (credentials เป็นของคุณวุฒิผู้สมัคร) ให้เลือกสรร 'whose' เพื่อเชื่อมความเป็นเจ้าของโดยสมบูรณ์",
+    speedHack: "สังเกตความสัมพันธ์: [Research associate] + [credentials] = ใบรับรองของนักวิจัย โครงสร้าง 'นาม + whose + นาม' ชี้เป้าไปที่ 'whose'"
+  },
+  {
+    id: "T1-059",
+    difficulty: "Hard",
+    topic: "Inversion Structures",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 90s",
+    estimatedTime: 90,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "Rarely [59] clinical safety protocols violated in this laboratory, as our supervisors inspect the compliance measures every morning.",
+    passage: null,
+    options: [
+      "are",
+      "do",
+      "is",
+      "have"
+    ],
+    answer: 0,
+    correctExplanation: "ตอบข้อ 0 (ตัวเลือกแรก) 'are' โครงสร้างประโยคนี้ใช้หลักการกลับหัวประโยค (Inversion) เมื่อประโยคขึ้นต้นด้วยกริยาวิเศษณ์เชิงปฏิเสธอย่าง 'Rarely' (แทบจะไม่) จะส่งผลให้ต้องนำกริยาช่วยมาวางไว้หน้าประธาน ในบริบทนี้ประธานคือ 'clinical safety protocols' (พหูพจน์) และโครงสร้างประโยคเป็น Passive (ถูกละเลย/ฝ่าฝืน) จึงใช้กริยาช่วยรูปพหูพจน์ 'are' คู่กับกริยาช่อง 3 'violated' (Rarely are protocols violated... = Protocols are rarely violated...)",
+    wrongExplanation: "ข้อ 1 'do' หากนำมาขึ้นต้นจะเป็น Active และต้องการกริยาช่อง 1 ไม่ใช่ช่อง 3 'violated'; ข้อ 2 'is' เป็นกริยาเอกพจน์ขัดแย้งประธานพหูพจน์ 'protocols'; ข้อ 3 'have' จะทำให้เป็นโครงสร้าง Active Perfect ซึ่งขาดความหมายเชิงรับ",
+    mindset: "ประโยค Inversion โครงสร้างขั้นสูง (Hard) มักใช้ตัววิเศษณ์เชิงปฏิเสธ (Rarely, Seldom, Little, Scarcely, Under no circumstances) นำหน้าประโยค กริยาช่วยต้องย้ายมาวางหน้าประธานและผันสอดคล้องตามประธานรวมทั้ง Tense/Voice ให้ครบถ้วน",
+    speedHack: "พิจารณาประธาน 'protocols' (พหูพจน์) และกริยาแท้ 'violated' (V-3) ในโครงสร้างกลับหัว (Inversion) ยืนยันคำตอบ Passive คู่กับ Verb to be พหูพจน์คือ 'are'"
+  },
+  {
+    id: "T1-060",
+    difficulty: "Medium",
+    topic: "Subjunctive Mood",
+    section: "Grammar",
+    partTitle: "PART 4: GRAMMAR IN CONTEXT",
+    suggestedTime: "Suggested Time: 60s",
+    estimatedTime: 60,
+    frequency: "High",
+    examWeight: 5,
+    yearPattern: "2568-2569",
+    text: "The chief of surgery recommended that the newly admitted patient [60] isolated until the respiratory virus laboratory results are confirmed.",
+    passage: null,
+    options: [
+      "is",
+      "be",
+      "was",
+      "will be"
+    ],
+    answer: 1,
+    correctExplanation: "ตอบข้อ 1 (ตัวเลือกสอง) 'be' เนื่องจากโครงสร้างประโยคใช้ Subjunctive Mood หลังกริยาแนะนำสั่งการอย่าง 'recommend that' ตามหลักไวยากรณ์ ประธานในอนุประโยค (the newly admitted patient) จะต้องใช้กริยาฐานรูปปกติไม่มีการผัน Tense/S/ES ใดๆ (Bare Infinitive) ซึ่งก็คือรูปคำว่า 'be' ในโครงสร้าง Passive (be isolated) เพื่อบ่งชี้คำสั่งความปรารถนา",
+    wrongExplanation: "ข้ออื่น 'is', 'was', 'will be' เป็นการผันกริยาตาม Tense และประธานปกติ ซึ่งผิดกฎโครงสร้าง Subjunctive ของคำกริยาตระกูลสัญญะสั่งการ (demand, recommend, suggest, insist)",
+    mindset: "เมื่อเจอประโยคที่ใช้กริยา 'recommend / suggest / request / ask / demand' + that clause ให้ระลึกเสมอว่าใน Clause นั้น กริยาต้องอยู่ในรูปดั้งเดิม (Base form/Bare infinitive) เสมอไม่ว่าประธานจะเป็นเอกพจน์หรือพหูพจน์",
+    speedHack: "เห็นคำกริยาบอกข้อเสนอแนะ 'recommended that...' ตัวเลือกที่มีโอกาสถูก 99% ในการสอบพาร์ทแกรมมาร์คือรูปดั้งเดิมเปล่าๆ ของ Verb to be ซึ่งก็คือ 'be'"
+  }
+];
+
+// 1. Overwrite tgat1.ts local file
+function updateLocalTgat1() {
+  console.log('⏳ Updating local src/data/tgat1.ts file...');
+  const dataDir = path.join(projectDir, 'src/data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
+  const outputContent = `import type { TGAT1Question } from "@/types/exam";
+
+export const TGAT1_QUESTIONS: TGAT1Question[] = ${JSON.stringify(questions, null, 2)};
+`;
+
+  fs.writeFileSync(path.join(dataDir, 'tgat1.ts'), outputContent, 'utf-8');
+  console.log(`✅ Successfully wrote ${questions.length} questions locally to src/data/tgat1.ts`);
+}
+
+// 2. Overwrite Google Sheet database
+async function uploadToSheets() {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+    console.warn('⚠️ Google Credentials not fully configured in env. Skipping Sheets upload.');
+    return;
+  }
+
+  console.log('⏳ Authenticating with Google Sheets API...');
+  try {
+    const sheets = await getGoogleSheetsClient();
+    
+    console.log(`🧹 Clearing tab "TGAT1_Questions"...`);
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId: SHEET_ID,
+      range: 'TGAT1_Questions!A2:AZ1000'
+    });
+
+    console.log(`💾 Uploading ${questions.length} manual questions to "TGAT1_Questions" tab...`);
+    const nowStr = new Date().toISOString();
+    const rows = questions.map(q => [
+      q.id,
+      'TGAT1',
+      q.difficulty,
+      q.topic,
+      '', // subtopic
+      q.section,
+      q.partTitle,
+      q.suggestedTime,
+      q.estimatedTime,
+      q.frequency,
+      q.examWeight,
+      q.yearPattern,
+      q.text,
+      q.passage || '',
+      q.options[0],
+      q.options[1],
+      q.options[2],
+      q.options[3],
+      q.answer === 0 ? 'A' : (q.answer === 1 ? 'B' : (q.answer === 2 ? 'C' : 'D')),
+      q.correctExplanation,
+      q.wrongExplanation,
+      q.mindset,
+      q.speedHack,
+      'FALSE', // isUsed
+      0, // usageCount
+      '', // lastUsedAt
+      '', // tags
+      nowStr
+    ]);
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: 'TGAT1_Questions!A2',
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: rows
+      }
+    });
+    console.log('✅ Google Sheets tab "TGAT1_Questions" successfully updated!');
+
+    // Append to Question_History
+    console.log('💾 Appending to "Question_History" tab...');
+    const historyRows = questions.map(q => {
+      const fullText = `${q.passage ? `${q.passage}\n` : ''}${q.text}\nOptions: ${q.options.join(' | ')}`;
+      const crypto = require('crypto');
+      const hash = crypto.createHash('md5').update(fullText).digest('hex');
+      return [
+        q.id,
+        fullText,
+        q.topic,
+        q.difficulty,
+        '', // reasoningType
+        q.section,
+        hash,
+        nowStr
+      ];
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: 'Question_History!A:A',
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: historyRows
+      }
+    });
+    console.log('✅ Google Sheets "Question_History" tab successfully appended!');
+
+  } catch (error: any) {
+    console.error('❌ Failed to upload to Google Sheets:', error.message || error);
+  }
+}
+
+async function run() {
+  console.log('🚀 STARTING MANUAL TGAT1 EXAM REPLACEMENT SCRIPT');
+  console.log('--------------------------------------------------');
+  updateLocalTgat1();
+  await uploadToSheets();
+  console.log('🎉 ALL DONE!');
+}
+
+run();

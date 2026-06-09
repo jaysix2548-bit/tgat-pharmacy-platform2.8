@@ -1,0 +1,46 @@
+<svg width="400" height="130" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .box { fill: #1e293b; stroke: #38bdf8; stroke-width: 2.5; rx: 10; }
+    .label { fill: #94a3b8; font-size: 11px; font-family: system-ui, -apple-system, sans-serif; font-weight: bold; text-anchor: middle; }
+    .circle-solid { fill: #f43f5e; }
+    .square-trans { fill: #38bdf8; fill-opacity: 0.6; stroke: #0284c7; stroke-width: 1.5; }
+    .qmark { fill: #eab308; font-size: 28px; font-family: system-ui, -apple-system, sans-serif; font-weight: 900; text-anchor: middle; }
+  </style>
+
+  <!-- Frame 1 -->
+  <g transform="translate(10, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Circle at top-right (x: 60, y: 20) -->
+    <circle class="circle-solid" cx="60" cy="20" r="12"/>
+    <!-- Square at bottom-left (x: 10, y: 50) -->
+    <rect class="square-trans" x="10" y="50" width="20" height="20"/>
+    <text x="40" y="105" class="label">ภาพที่ 1</text>
+  </g>
+
+  <!-- Frame 2 -->
+  <g transform="translate(110, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Circle at bottom-right (x: 60, y: 60) -->
+    <circle class="circle-solid" cx="60" cy="60" r="12"/>
+    <!-- Square at bottom-right (x: 50, y: 50) - Overlapping -->
+    <rect class="square-trans" x="50" y="50" width="20" height="20"/>
+    <text x="40" y="105" class="label">ภาพที่ 2</text>
+  </g>
+
+  <!-- Frame 3 -->
+  <g transform="translate(210, 10)">
+    <rect class="box" width="80" height="80"/>
+    <!-- Circle at bottom-left (x: 20, y: 60) -->
+    <circle class="circle-solid" cx="20" cy="60" r="12"/>
+    <!-- Square at top-right (x: 50, y: 10) -->
+    <rect class="square-trans" x="50" y="10" width="20" height="20"/>
+    <text x="40" y="105" class="label">ภาพที่ 3</text>
+  </g>
+
+  <!-- Frame 4 (Question) -->
+  <g transform="translate(310, 10)">
+    <rect class="box" width="80" height="80" style="stroke: #c084fc; stroke-dasharray: 5 5;"/>
+    <text x="40" y="50" class="qmark">?</text>
+    <text x="40" y="105" class="label">ภาพที่ 4</text>
+  </g>
+</svg>
