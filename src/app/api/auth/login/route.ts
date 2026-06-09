@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getGoogleSheetsClient } from '@/lib/googleSheets';
 import { cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
+
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 
@@ -57,17 +57,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Validate password
-    let isPasswordValid = false;
-    try {
-      isPasswordValid = await bcrypt.compare(password, matchedUser.hashedPassword);
-    } catch (e) {
-      isPasswordValid = false;
-    }
+    // 2. Validate password (plaintext comparison)
+    let isPasswordValid = (password === matchedUser.hashedPassword);
 
-    // Fallback: If it's a plain text password (manually entered in Google Sheets)
-    if (!isPasswordValid && password === matchedUser.hashedPassword) {
-      isPasswordValid = true;
+    // Fallback: support old bcrypt-hashed passwords
+    if (!isPasswordValid && matchedUser.hashedPassword.startsWith('$2')) {
+      try {
+        const bcrypt = await import('bcryptjs');
+        isPasswordValid = await bcrypt.compare(password, matchedUser.hashedPassword);
+      } catch (e) {
+        isPasswordValid = false;
+      }
     }
 
     if (!isPasswordValid) {

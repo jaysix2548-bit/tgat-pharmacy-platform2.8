@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getGoogleSheetsClient } from '@/lib/googleSheets';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -41,9 +40,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Generate UUID for the user and hash the password
+    // 2. Generate UUID for the user
     const userId = crypto.randomUUID();
-    const hashedPassword = await bcrypt.hash(password, 10);
     const now = new Date().toISOString();
 
     // 3. Append new user row
@@ -56,7 +54,7 @@ export async function POST(request: Request) {
           [
             userId,
             username.trim(),
-            hashedPassword,
+            password.trim(),
             (displayName || username).trim(),
             'student',
             now, // createdAt
