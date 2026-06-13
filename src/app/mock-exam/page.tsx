@@ -70,9 +70,10 @@ export default function MockExamPage() {
   const selectedAnswer = mockSession.answers[mockSession.currentQuestionIndex];
 
   const formatTime = (secs: number) => {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
+    if (isNaN(secs) || secs === undefined || secs === null) return "00:00:00";
+    const h = Math.max(0, Math.floor(secs / 3600));
+    const m = Math.max(0, Math.floor((secs % 3600) / 60));
+    const s = Math.max(0, secs % 60);
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
@@ -99,7 +100,7 @@ export default function MockExamPage() {
       <div className="max-w-4xl mx-auto space-y-6 relative z-10">
         
         {/* Top Header Panel */}
-        <div className="flex items-center justify-between p-4 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
@@ -108,16 +109,16 @@ export default function MockExamPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h2 className="heading-md text-white font-heading leading-tight">
+              <h2 className="text-sm md:text-base font-bold text-white leading-tight">
                 TGAT Full 200 Questions Mock Exam
               </h2>
-              <span className="text-small text-indigo-400 font-medium bg-neon-purple/10 px-2 py-0.5 rounded border border-neon-purple/20">
+              <span className="text-[10px] text-indigo-400 font-medium bg-neon-purple/10 px-2 py-0.5 rounded border border-neon-purple/20">
                 Official Time Simulation
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
             <div className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-mono font-bold text-sm">
               ⏳ {formatTime(mockSession.timeRemaining)}
             </div>
