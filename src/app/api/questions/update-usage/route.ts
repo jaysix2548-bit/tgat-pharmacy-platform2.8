@@ -123,28 +123,56 @@ export async function POST(request: Request) {
     
     const questionsResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${questionTab}!A2:P1000`, // A: id, P: usageCount
+      range: `${questionTab}!A1:AZ1000`, // A1:AZ1000 to include headers
     });
 
-    const questionRows = questionsResponse.data.values || [];
+    const allRows = questionsResponse.data.values || [];
+    if (allRows.length === 0) {
+      throw new Error(`No data found in tab ${questionTab}`);
+    }
+
+    const headers = allRows[0].map((h: string) => h.trim());
+    const idIdx = headers.indexOf('id');
+    const isUsedIdx = headers.indexOf('isUsed');
+    const usageCountIdx = headers.indexOf('usageCount');
+    const lastUsedAtIdx = headers.indexOf('lastUsedAt');
+
+    if (idIdx === -1 || isUsedIdx === -1 || usageCountIdx === -1 || lastUsedAtIdx === -1) {
+      throw new Error(`Required columns (id, isUsed, usageCount, lastUsedAt) not found in tab ${questionTab}`);
+    }
+
+    // Helper to convert column index to letter (0 -> A, 25 -> Z, 26 -> AA, etc.)
+    const getColumnLetter = (colIndex: number): string => {
+      let temp = colIndex;
+      let letter = '';
+      while (temp >= 0) {
+        letter = String.fromCharCode((temp % 26) + 65) + letter;
+        temp = Math.floor(temp / 26) - 1;
+      }
+      return letter;
+    };
+
+    const startColLetter = getColumnLetter(isUsedIdx);
+    const endColLetter = getColumnLetter(lastUsedAtIdx);
+
+    const questionRows = allRows.slice(1);
     const updateRequests: any[] = [];
 
     attempts.forEach((attempt: any) => {
-      // Find row index of this question
       let rowIndex = -1;
       let currentUsageCount = 0;
 
       for (let i = 0; i < questionRows.length; i++) {
-        if (questionRows[i][0] === attempt.questionId) {
+        if (questionRows[i][idIdx] === attempt.questionId) {
           rowIndex = i + 2; // 2-indexed
-          currentUsageCount = parseInt(questionRows[i][15], 10) || 0; // Column P is index 15
+          currentUsageCount = parseInt(questionRows[i][usageCountIdx], 10) || 0;
           break;
         }
       }
 
       if (rowIndex !== -1) {
         updateRequests.push({
-          range: `${questionTab}!O${rowIndex}:Q${rowIndex}`, // O: isUsed, P: usageCount, Q: lastUsedAt
+          range: `${questionTab}!${startColLetter}${rowIndex}:${endColLetter}${rowIndex}`,
           values: [['TRUE', currentUsageCount + 1, now]],
         });
       }

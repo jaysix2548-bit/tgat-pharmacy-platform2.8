@@ -22,8 +22,8 @@ if (!GEMINI_API_KEY) {
   process.exit(1);
 }
 
-const EMBEDDING_MODEL = 'text-embedding-004';
-const GENERATION_MODEL = 'gemini-1.5-flash'; // Configurable, fallback to gemini-1.5-flash for compatibility
+const EMBEDDING_MODEL = 'gemini-embedding-2';
+const GENERATION_MODEL = 'gemini-3.5-flash'; // Configurable, fallback to gemini-3.5-flash for compatibility
 
 const CACHE_PATH = path.join(__dirname, 'embeddings_cache.json');
 
@@ -227,97 +227,399 @@ async function getExistingHistory(sheets: any): Promise<any[]> {
 // -------------------------------------------------------------------------
 // Call Gemini API to generate candidates
 // -------------------------------------------------------------------------
-async function generateCandidate(examType: string, negativeConstraints: string[] = []): Promise<GenQuestion> {
+async function generateCandidate(examType: string, targetDifficulty: string, negativeConstraints: string[] = []): Promise<GenQuestion> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GENERATION_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   
-  let typePrompt = '';
-  if (examType === 'tgat1') {
-    typePrompt = `Generate a TGAT1 (English Communication) exam question. It should focus on either:
-- Part 1: Conversation & Dialogue (Logical context, response logic)
-- Part 2: Vocabulary & Sentence Structure (Context clues, syntax)
-- Part 3: Reading Comprehension (Detailed passage followed by context-based question)`;
-  } else if (examType === 'tgat2') {
-    typePrompt = `Generate a TGAT2 (Critical & Logical Thinking) exam question. It should focus on either:
-- Numerical reasoning (Sequences, equations, charts/tables data interpretation)
-- Logical/Analytical reasoning (Puzzles, Venn diagrams, logical deductions)
-- Spatial reasoning (Varying folding box styles, rotation logic)`;
-  } else {
-    typePrompt = `Generate a TGAT3 (Future Workforce Competencies) exam question. It should focus on:
-- Problem Solving, Communication, or collaboration scenario in a workplace.
-- Ensure the answers are graded scenario options (with choice A/B/C/D carrying different logical score weights, where one correct option is the best logical resolution).`;
-  }
+  let systemInstructions = '';
+  let requestPayload: any = null;
 
   const constraintSection = negativeConstraints.length > 0 
     ? `\nCRITICAL: You MUST NOT generate questions similar to these existing questions (avoid their scenarios, logic, contexts, or keywords):\n${negativeConstraints.map((c, i) => `[${i+1}] ${c}`).join('\n')}`
     : '';
 
-  const systemInstructions = `You are a premium, state-of-the-art TGAT (Thailand General Aptitude Test) question generator.
+  if (examType === 'tgat2') {
+    systemInstructions = `You are an elite Thai standardized exam architect specialized in TGAT2 (Critical & Logical Thinking).
+Your task is to generate an ORIGINAL, premium, high-quality TGAT2 exam question that strictly follows the official TGAT2 blueprint from MyTCAS.
+
+You MUST generate a question of difficulty level: "${targetDifficulty}". 
+Ensure it strictly matches the logic of a "${targetDifficulty}" difficulty tier question.
+
+━━━━━━━━━━━━━━━━━━
+OFFICIAL EXAM STRUCTURE & STATS
+━━━━━━━━━━━━━━━━━━
+Exam: TGAT2 — Critical & Logical Thinking
+* Total Questions in real exam: 80
+* Multiple Choice: 5 Choices (A, B, C, D, E)
+* Total Time: 60 Minutes
+
+━━━━━━━━━━━━━━━━━━
+OFFICIAL TGAT2 DOMAINS
+━━━━━━━━━━━━━━━━━━
+1. Language Ability (ความสามารถทางภาษา)
+   - Communication Meaning (การสื่อความหมาย)
+   - Language Usage (การใช้ภาษา)
+   - Reading (การอ่าน)
+   - Language Understanding (การเข้าใจภาษา)
+2. Numerical Ability (ความสามารถทางตัวเลข)
+   - Dimensional Sequences (อนุกรมมิติ)
+   - Quantitative Comparison (การเปรียบเทียบเชิงปริมาณ) - Must format columns A, B, C or columns I, II, III
+   - Data Sufficiency (ความเพียงพอของข้อมูล) - Must evaluate statements (ก) and (ข)
+   - Word Problems (โจทย์ปัญหา)
+3. Spatial Ability (ความสามารถทางมิติสัมพันธ์)
+   - Cube Folding (แบบพับกล่อง)
+   - Odd Image Detection (แบบหาภาพต่าง)
+   - 3D Rotation (แบบหมุนภาพสามมิติ)
+   - Image Assembly (แบบประกอบภาพ)
+4. Reasoning Ability (ความสามารถทางเหตุผล)
+   - Visual Sequences (อนุกรมภาพ)
+   - Visual Analogies (อุปมาอุปไมยภาพ)
+   - Logical Conclusions (สรุปความสมเหตุสมผล)
+   - Statement Analysis (วิเคราะห์ข้อความ)
+
+━━━━━━━━━━━━━━━━━━
+STRICT DIFFICULTY DISTRIBUTION & CRITERIA
+━━━━━━━━━━━━━━━━━━
+- Easy: (Direct reasoning, minimal traps, suggested time: 20-40s)
+- Medium: (Multi-step logical deductions, conditional constraints, reading nuance, suggested time: 45-70s)
+- Hard: (High cognitive load, cognitive switching, double negation, hidden assumptions, extremely deceptive traps, suggested time: 70-100s)
+
+━━━━━━━━━━━━━━━━━━
+MANDATORY IMAGE TEMPLATES (CRITICAL)
+━━━━━━━━━━━━━━━━━━
+If generating a question for "Spatial Ability" or "Reasoning Ability" that requires a diagram or visual pattern, you MUST select one of the following available SVG files and embed it at the beginning of the "question" field as:
+<img src="/images/exams/<filename>.svg" />
+
+Here is the list of available SVGs and their contexts:
+- "cube_net.svg" (Cross layout of 6 colored faces R, G, B, Y, W, K for Cube Folding)
+- "cube_net_lines.svg" (Cross layout of 6 faces with line segments for Cube Folding)
+- "arrow_pattern.svg" (Arrows pointing in directions in grid for pattern detection)
+- "grid_translation_39.svg" (Grid coordinate system for translation problems)
+- "circle_scaling_46.svg" (Visual progression of circle scaling/resizing)
+- "series_pattern_47.svg" (Visual pattern progression)
+- "overlay_48.svg" (Visual intersection/overlay of shapes)
+- "grid_series_52.svg" (Visual series in a 3x3 grid)
+- "paper_folding_53.svg" (Paper folding and punched holes net/unfolding)
+- "cube_arrows_56.svg" (3D cube rotation with arrow orientations)
+- "cylinder_points_57.svg" (3D cylinder rotation pattern)
+- "concentric_series_58.svg" (Visual series of concentric circle patterns)
+- "wrench_rotation_60.svg" (Visual rotation of mechanical tools/wrenches)
+- "cube_stack_62.svg" (Stack of 3D cubes for counting volume/cubes)
+- "f_block_64.svg" (3D blocks shaped like 'F' for 3D rotations)
+- "triangle_series_65.svg" (Visual series of triangle sub-segments)
+- "arc_progression_68.svg" (Progressive arcs scaling pattern)
+- "grid_scan_69.svg" (Symmetric grid cell scan lines)
+- "branch_circle_70.svg" (Circle branching logic tree)
+- "grid_maze_41.svg" (Maze pathways through grid squares)
+- "health_reflection_40.svg" (Reflective symmetry logic)
+
+If the selected subtopic does NOT require a diagram (e.g. Language Ability, Word Problems, or Logical Conclusions), you must NOT include any image tags.
+
+━━━━━━━━━━━━━━━━━━
+CRITICAL UNIQUENESS & TRAP RULES
+━━━━━━━━━━━━━━━━━━
+- NO rewritten versions of existing questions or cosmetic updates (changing names/numbers/keywords only).
+- Every question must introduce a new scenario, reasoning structure, or cognitive trap.
+- Design deceptive wrong choices (distractors) that represent partial truths, common calculation mistakes, or logical fallacies (e.g., affirming the consequent, denying the antecedent).
+- Explanations must be highly pedagogical, explaining both the correct logic and the fallacy in each trap choice.
+
+${constraintSection}
+
+Generate a question adhering to this standard. Output ONLY valid JSON matching the schema.`;
+
+    requestPayload = {
+      contents: [{
+        parts: [{ text: systemInstructions }]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            difficulty: { type: 'STRING', enum: [targetDifficulty] },
+            domain: { type: 'STRING', description: 'One of: Language Ability, Numerical Ability, Spatial Ability, Reasoning Ability' },
+            subtopic: { type: 'STRING', description: 'Blueprint subtopic name (e.g. Word Problems, Cube Folding, Communication Meaning)' },
+            question: { type: 'STRING', description: 'The question prompt, written in official exam Thai. HTML supported.' },
+            passage: { type: 'STRING', description: 'Optional reading passage text in Thai, or null if not applicable.' },
+            choiceA: { type: 'STRING', description: 'First option' },
+            choiceB: { type: 'STRING', description: 'Second option' },
+            choiceC: { type: 'STRING', description: 'Third option' },
+            choiceD: { type: 'STRING', description: 'Fourth option' },
+            choiceE: { type: 'STRING', description: 'Fifth option' },
+            answer: { type: 'STRING', enum: ['A', 'B', 'C', 'D', 'E'], description: 'Correct answer letter' },
+            correctExplanation: { type: 'STRING', description: 'Detailed step-by-step reasoning for the correct choice' },
+            wrongExplanation: { type: 'STRING', description: 'Detailed analysis of why the other options are wrong/traps' },
+            reasoningType: { type: 'STRING', description: 'e.g. Numerical, Logical, Spatial, Verbal, Analytical' },
+            trapPattern: { type: 'STRING', description: 'Core trap design type used (e.g. Affirmed Consequent, Direct Match Trap)' },
+            estimatedTime: { type: 'INTEGER', description: 'Estimated time in seconds (e.g., 60)' }
+          },
+          required: [
+            'difficulty', 'domain', 'subtopic', 'question', 'choiceA', 'choiceB', 'choiceC', 'choiceD', 'choiceE',
+            'answer', 'correctExplanation', 'wrongExplanation', 'reasoningType', 'trapPattern', 'estimatedTime'
+          ]
+        }
+      }
+    };
+  } else if (examType === 'tgat3') {
+    const domains = [
+      'การสร้างคุณค่าและนวัตกรรม',
+      'การแก้ไขปัญหาที่ซับซ้อน',
+      'การบริหารจัดการอารมณ์',
+      'การเป็นพลเมืองที่มีส่วนร่วมของสังคม'
+    ];
+    const targetDomain = domains[Math.floor(Math.random() * domains.length)];
+
+    systemInstructions = `You are an elite Thai national examination item writer specialized in TGAT3 (93 สมรรถนะการทำงาน) based STRICTLY on the official TCAS blueprint.
+Your task is to generate an ORIGINAL, premium, high-quality TGAT3 exam question that strictly follows the official MyTCAS blueprint.
+
+You MUST generate a question of difficulty level: "${targetDifficulty}".
+The generated question MUST be categorized under the domain: "${targetDomain}".
+
+━━━━━━━━━━━━━━━━━━
+OFFICIAL EXAM STRUCTURE & DOMAINS
+━━━━━━━━━━━━━━━━━━
+Exam: TGAT3 — 93 สมรรถนะการทำงาน (Workforce Competencies)
+* Total Questions: 60
+* Multiple Choice: 4 Choices (A, B, C, D)
+* Duration: 60 Minutes
+* Total Score: 100 Points
+
+The exam covers the following domains and subtopics:
+1. การสร้างคุณค่าและนวัตกรรม (Value Creation & Innovation)
+   - การคิดเชิงวิเคราะห์ (Analytical thinking)
+   - การแก้ไขปัญหาอย่างมืออาชีพ (Professional problem solving)
+   - ความคิดเชิงนวัตกรรม (Innovative thinking)
+2. การแก้ไขปัญหาที่ซับซ้อน (Complex Problem Solving)
+   - การระบุปัญหา (Identifying problems)
+   - การแสวงหาทางออก (Generating and selecting solutions)
+   - การนำทางออกไปแก้ปัญหา (Implementation)
+   - การประเมินทางออกเพื่อการพัฒนาปรับปรุง (Evaluation)
+3. การบริหารจัดการอารมณ์ (Emotional Management)
+   - ความตระหนักรู้ตนเอง (Self awareness)
+   - การควบคุมอารมณ์และบุคลิกภาพ (Personality and emotional control)
+   - ความเข้าใจผู้อื่น (Interpersonal understanding)
+4. การเป็นพลเมืองที่มีส่วนร่วมของสังคม (Active Citizen)
+   - การมุ่งเน้นการบริการสังคม (Service orientation)
+   - จิตสำนึกและรับผิดชอบต่อสิ่งแวดล้อม (Environmental responsibility)
+   - การสร้างสรรค์เพื่อประโยชน์ของท้องถิ่น (Creating local benefits)
+
+━━━━━━━━━━━━━━━━━━
+THE THREE OFFICIAL QUESTION FORMATS
+━━━━━━━━━━━━━━━━━━
+Every question must represent one of these three formats (randomly selected):
+1. Format 1: เลือกตอบตัวเลือกเดียว (Single Answer)
+   - Standard workplace, professional, or social situation. Choose the single best action. Options are graded or have one single correct answer.
+2. Format 2: ข้อสอบ 1 ข้อ มีหลายคำตอบ (Multiple Necessary Answers)
+   - The question asks "ข้อมูลใด/บุคคลใดบ้างที่จำเป็น..." or similar.
+   - The choices A, B, C, D are structured as combinations of these options. E.g.:
+     - A. ข้อ 1 และ 3 จำเป็น
+     - B. เฉพาะข้อ 2 และ 4
+     - C. ข้อ 1, 3 และ 4 จำเป็น (Correct)
+     - D. ทุกข้อมีความจำเป็นทั้งหมด
+3. Format 3: เลือกตอบตัวเลือกเดียว ในข้อสอบ 2 ข้อที่สัมพันธ์กัน (Linked Two-Step)
+   - Since the exam is flat and shuffled, this format MUST be represented as a single self-contained question evaluating both Steps: Problem identification and its matched Solution.
+   - The question text should be "ปัญหาหลักคืออะไร และแนวทางแก้ไขที่สอดคล้องกันคืออะไร" (or similar).
+   - The choices A, B, C, D are structured as pairs: \`[ปัญหา: ...] | [แนวทางแก้ไข: ...]\` where only one pair is logically correct and aligned.
+
+━━━━━━━━━━━━━━━━━━
+DIFFICULTY PROFILE CRITERIA
+━━━━━━━━━━━━━━━━━━
+- Easy: Direct workforce/social situations with clear ethical/logical choices. No deep traps. Suggested time: 35-45s.
+- Medium: Scenarios with moderate workplace/interpersonal conflict, requiring balanced compromise, or evaluating 3-4 simple constraints. Suggested time: 45-60s.
+- Hard: Complex scenarios with multi-stakeholder conflicts, ethical dilemmas, emotional tension, or evaluating 5+ trade-offs. The correct option represents a highly professional, systemic, and sustainable solution, while distractors represent reactive, short-sighted, or emotionally charged options. Suggested time: 60-90s.
+
+━━━━━━━━━━━━━━━━━━
+CRITICAL UNIQUENESS & REALISM RULES
+━━━━━━━━━━━━━━━━━━
+- Use realistic, modern Thai names and workplace settings (e.g., tech startups, local communities, agricultural cooperatives, corporate departments).
+- Every question must be self-contained so that it remains completely coherent even if shuffled.
+- Distractors must represent common logical fallacies, emotional outbursts, or short-sighted solutions that sound tempting but lack systemic effectiveness.
+- Explanations must be highly professional, detailing why the correct choice is optimal and highlighting the shortcomings/fallacies of the wrong options.
+
+${constraintSection}
+
+Generate a question adhering to this standard. Output ONLY valid JSON matching the schema.`;
+
+    requestPayload = {
+      contents: [{
+        parts: [{ text: systemInstructions }]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            difficulty: { type: 'STRING', enum: [targetDifficulty] },
+            domain: { type: 'STRING', enum: domains },
+            subtopic: { type: 'STRING', description: 'Blueprint subtopic name (e.g. การคิดเชิงวิเคราะห์, การระบุปัญหา, ความตระหนักรู้ตนเอง, จิตสำนึกและรับผิดชอบต่อสิ่งแวดล้อม)' },
+            questionType: { type: 'STRING', enum: ['SingleAnswer', 'MultipleNecessary', 'LinkedTwoStep'] },
+            question: { type: 'STRING', description: 'The question text in Thai. Details the scenario and specific question.' },
+            passage: { type: 'STRING', description: 'Optional scenario description text in Thai, or null if not applicable.' },
+            choiceA: { type: 'STRING', description: 'First option' },
+            choiceB: { type: 'STRING', description: 'Second option' },
+            choiceC: { type: 'STRING', description: 'Third option' },
+            choiceD: { type: 'STRING', description: 'Fourth option' },
+            answer: { type: 'STRING', enum: ['A', 'B', 'C', 'D'], description: 'Correct answer letter' },
+            correctExplanation: { type: 'STRING', description: 'Detailed step-by-step reasoning for the correct choice' },
+            wrongExplanation: { type: 'STRING', description: 'Detailed analysis of why the other options are wrong/traps' },
+            mindset: { type: 'STRING', description: 'Core mindset or workforce competence concept tag for the student' },
+            speedHack: { type: 'STRING', description: 'Speed tip/shortcut for the student' },
+            estimatedTime: { type: 'INTEGER', description: 'Estimated time in seconds (e.g., 60)' }
+          },
+          required: [
+            'difficulty', 'domain', 'subtopic', 'questionType', 'question',
+            'choiceA', 'choiceB', 'choiceC', 'choiceD', 'answer',
+            'correctExplanation', 'wrongExplanation', 'mindset', 'speedHack', 'estimatedTime'
+          ]
+        }
+      }
+    };
+  } else if (examType === 'tgat1') {
+    const sections = ['Speaking Skill', 'Reading Skill'];
+    const selectedSection = sections[Math.floor(Math.random() * sections.length)];
+    
+    let selectedType = '';
+    if (selectedSection === 'Speaking Skill') {
+      const types = ['Question-Response', 'Short Conversations', 'Long Conversations'];
+      selectedType = types[Math.floor(Math.random() * types.length)];
+    } else {
+      const types = ['Text Completion', 'Reading Comprehension'];
+      selectedType = types[Math.floor(Math.random() * types.length)];
+    }
+
+    systemInstructions = `You are an elite national examination item writer specialized in TGAT1 (91 การสื่อสารภาษาอังกฤษ) based STRICTLY on the official MyTCAS blueprint.
+Your task is to generate an ORIGINAL, premium, high-quality TGAT1 exam question that strictly follows the blueprint.
+
+You MUST generate a question of difficulty level: "${targetDifficulty}".
+The generated question MUST be categorized under the section: "${selectedSection}" and type: "${selectedType}".
+
+━━━━━━━━━━━━━━━━━━
+OFFICIAL EXAM STRUCTURE & SECTIONS
+━━━━━━━━━━━━━━━━━━
+Exam: TGAT1 — 91 การสื่อสารภาษาอังกฤษ (English Communication)
+* Total Questions: 60
+* Multiple Choice: 4 Choices (A, B, C, D)
+* Duration: 60 Minutes
+* Total Score: 100 Points
+
+The exam covers the following sections and types:
+1. Speaking Skill (30 Questions)
+   - Question-Response (10 Questions): Single-turn natural spoken dialogue response. Avoid robotic speech.
+   - Short Conversations (10 Questions): 3 dialogues of 2 speakers. E.g. focus on tone, situations, relations.
+   - Long Conversations (10 Questions): 2 dialogues of 2-3 speakers. E.g. focus on role relations, evolving context.
+2. Reading Skill (30 Questions)
+   - Text Completion (15 Questions): Cloze test passages focusing on grammar in context, cohesive devices, collocations.
+   - Reading Comprehension (15 Questions): 3 passages (100-200 words each) on modern topics (AI, environment, workplace, etc.). Tests main idea, inference, tone, author attitude, implication.
+
+━━━━━━━━━━━━━━━━━━
+ELITE DIFFICULTY ENGINEERING & NUANCE
+━━━━━━━━━━━━━━━━━━
+To separate top-tier students under time pressure, you MUST increase the difficulty level significantly:
+- Easy: Direct context clues, short exchange, basic inference.
+- Medium: Implied meanings, register conflict, tone analysis, close distractors.
+- Hard: High cognitive load, indirect implicatures, subtle social contexts, psychological traps.
+- Distractors must be highly alluring:
+  - Speaking: Choice is grammatically correct and translates reasonably, but violates pragmatic rules (e.g. over-polite in informal setting) or register.
+  - Reading: True-but-irrelevant facts, keyword matches with reversed logic, or overgeneralizations.
+
+━━━━━━━━━━━━━━━━━━
+CRITICAL GENERATION RULES
+━━━━━━━━━━━━━━━━━━
+- Use modern, internationally relevant, and socially believable scenarios (corporate meetings, social media trends, eco-tourism, healthcare ethics).
+- Every question must be self-contained so that it remains completely coherent even if shuffled.
+- DO NOT use rare/archaic vocabulary or archaic grammatical rules to create difficulty; difficulty must come from communication nuance, speed reading pressure, and contextual implication.
+- Every question must introduce at least ONE of: a new scenario, a new reasoning chain, a new analytical method, a new interdisciplinary connection, or a new interpretation pattern.
+
+${constraintSection}
+
+Generate a question adhering to this standard. Output ONLY valid JSON matching the schema.`;
+
+    requestPayload = {
+      contents: [{
+        parts: [{ text: systemInstructions }]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            difficulty: { type: 'STRING', enum: [targetDifficulty] },
+            domain: { type: 'STRING', enum: [selectedSection] },
+            subtopic: { type: 'STRING', description: 'Communication skill or keyword (e.g., Context Clues, Pragmatics, Inference)' },
+            questionType: { type: 'STRING', enum: [selectedType] },
+            question: { type: 'STRING', description: 'The question prompt in English. For text completion or conversation, include gaps like ______ or blank indicator.' },
+            passage: { type: 'STRING', description: 'Reading passage or dialogue text. Leave null if not applicable.' },
+            choiceA: { type: 'STRING', description: 'First option' },
+            choiceB: { type: 'STRING', description: 'Second option' },
+            choiceC: { type: 'STRING', description: 'Third option' },
+            choiceD: { type: 'STRING', description: 'Fourth option' },
+            answer: { type: 'STRING', enum: ['A', 'B', 'C', 'D'], description: 'Correct answer letter' },
+            correctExplanation: { type: 'STRING', description: 'Detailed reasoning for the correct choice' },
+            wrongExplanation: { type: 'STRING', description: 'Detailed analysis of why other options are wrong/traps' },
+            mindset: { type: 'STRING', description: 'Core mindset or concept tag for the student' },
+            speedHack: { type: 'STRING', description: 'Speed tip/shortcut for the student' },
+            estimatedTime: { type: 'INTEGER', description: 'Estimated time in seconds (e.g., 60)' }
+          },
+          required: [
+            'difficulty', 'domain', 'subtopic', 'questionType', 'question',
+            'choiceA', 'choiceB', 'choiceC', 'choiceD', 'answer',
+            'correctExplanation', 'wrongExplanation', 'mindset', 'speedHack', 'estimatedTime'
+          ]
+        }
+      }
+    };
+  } else {
+    systemInstructions = `You are a premium, state-of-the-art TGAT (Thailand General Aptitude Test) question generator.
 Your target is to output a single, high-quality exam question matching the specified type.
-
-${typePrompt}
-
----
-CRITICAL GENERATION AND DIVERSITY RULES:
-1. **Prioritize diversity**:
-   - Vary concepts, reasoning structures, elimination patterns, and scenario types.
-   - Vary graph interpretation styles and data analysis formats.
-2. **Avoid duplication & clones**:
-   - Absolutely NO template recycling, cosmetic rewrites (changing only names, numbers, or keywords of existing questions), parameter-swapped duplicates, or structurally identical questions.
-   - Prohibit identical reasoning chains, identical elimination strategies, repeated distractor structures, recycled trap-answer patterns, repeated graph interpretation logic, repeated reading passage logic, and repeated workplace conflict structures.
-3. **Prioritize variation**:
-   - Vary the cognitive load, reasoning depth, trap-answer design, context framing, and interdisciplinary integration.
-   - Distractors (wrong options) should have high logical appeal (traps) but contain a clear, logical flaw explained in the wrongExplanation.
-4. **Mandatory Innovation**:
-   - Every generated question must introduce at least ONE of: a new scenario, a new reasoning chain, a new analytical method, a new interdisciplinary connection, or a new interpretation pattern.
 
 ${constraintSection}
 
 Ensure that the question feels like a genuinely new exam experience.`;
 
-  const requestPayload = {
-    contents: [{
-      parts: [{ text: systemInstructions }]
-    }],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'OBJECT',
-        properties: {
-          difficulty: { type: 'STRING', enum: ['Easy', 'Medium', 'Hard', 'Elite'] },
-          topic: { type: 'STRING', description: 'Brief category tag (e.g. Vocabulary, Numerical Reasoning, Conflict Management)' },
-          section: { type: 'STRING', description: 'Exam section' },
-          partTitle: { type: 'STRING', description: 'Header part title (e.g. Part 1: Conversation)' },
-          suggestedTime: { type: 'STRING', description: 'e.g. Suggested Time: 45s' },
-          estimatedTime: { type: 'INTEGER', description: 'Estimated time in seconds (e.g., 60)' },
-          frequency: { type: 'STRING', description: 'How often it appears (e.g., High)' },
-          examWeight: { type: 'INTEGER', description: 'Standard weight (e.g., 5)' },
-          yearPattern: { type: 'STRING', description: 'e.g. 2568-2569' },
-          text: { type: 'STRING', description: 'The main question prompt. HTML supported.' },
-          passage: { type: 'STRING', description: 'Optional passage text. Use null if not applicable.' },
-          options: {
-            type: 'ARRAY',
-            items: { type: 'STRING' },
-            minItems: 4,
-            maxItems: 4
+    requestPayload = {
+      contents: [{
+        parts: [{ text: systemInstructions }]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            difficulty: { type: 'STRING', enum: ['Easy', 'Medium', 'Hard', 'Elite'] },
+            topic: { type: 'STRING', description: 'Brief category tag (e.g. Vocabulary, Numerical Reasoning, Conflict Management)' },
+            section: { type: 'STRING', description: 'Exam section' },
+            partTitle: { type: 'STRING', description: 'Header part title (e.g. Part 1: Conversation)' },
+            suggestedTime: { type: 'STRING', description: 'e.g. Suggested Time: 45s' },
+            estimatedTime: { type: 'INTEGER', description: 'Estimated time in seconds (e.g., 60)' },
+            frequency: { type: 'STRING', description: 'How often it appears (e.g., High)' },
+            examWeight: { type: 'INTEGER', description: 'Standard weight (e.g., 5)' },
+            yearPattern: { type: 'STRING', description: 'e.g. 2568-2569' },
+            text: { type: 'STRING', description: 'The main question prompt. HTML supported.' },
+            passage: { type: 'STRING', description: 'Optional passage text. Use null if not applicable.' },
+            options: {
+              type: 'ARRAY',
+              items: { type: 'STRING' },
+              minItems: 4,
+              maxItems: 4
+            },
+            answer: { type: 'INTEGER', description: '0-3 index of the correct/best option' },
+            correctExplanation: { type: 'STRING', description: 'Detailed step-by-step reasoning for the correct choice' },
+            wrongExplanation: { type: 'STRING', description: 'Detailed analysis of why the other options are wrong/traps' },
+            mindset: { type: 'STRING', description: 'Core mindset or concept tag for the student' },
+            speedHack: { type: 'STRING', description: 'Speed tip/shortcut for the student' },
+            conceptTags: { type: 'STRING', description: 'Comma-separated keywords representing the concept tags' },
+            reasoningType: { type: 'STRING', description: 'The type of reasoning used (e.g., Logical, Spatial, Critical)' },
+            scenarioType: { type: 'STRING', description: 'The scenario setting type (e.g., Corporate Workplace, Graph Analysis, Scientific Article)' }
           },
-          answer: { type: 'INTEGER', description: '0-3 index of the correct/best option' },
-          correctExplanation: { type: 'STRING', description: 'Detailed step-by-step reasoning for the correct choice' },
-          wrongExplanation: { type: 'STRING', description: 'Detailed analysis of why the other options are wrong/traps' },
-          mindset: { type: 'STRING', description: 'Core mindset or concept tag for the student' },
-          speedHack: { type: 'STRING', description: 'Speed tip/shortcut for the student' },
-          conceptTags: { type: 'STRING', description: 'Comma-separated keywords representing the concept tags' },
-          reasoningType: { type: 'STRING', description: 'The type of reasoning used (e.g., Logical, Spatial, Critical)' },
-          scenarioType: { type: 'STRING', description: 'The scenario setting type (e.g., Corporate Workplace, Graph Analysis, Scientific Article)' }
-        },
-        required: [
-          'difficulty', 'topic', 'section', 'partTitle', 'suggestedTime', 'estimatedTime',
-          'frequency', 'examWeight', 'yearPattern', 'text', 'options', 'answer',
-          'correctExplanation', 'wrongExplanation', 'mindset', 'speedHack',
-          'conceptTags', 'reasoningType', 'scenarioType'
-        ]
+          required: [
+            'difficulty', 'topic', 'section', 'partTitle', 'suggestedTime', 'estimatedTime',
+            'frequency', 'examWeight', 'yearPattern', 'text', 'options', 'answer',
+            'correctExplanation', 'wrongExplanation', 'mindset', 'speedHack',
+            'conceptTags', 'reasoningType', 'scenarioType'
+          ]
+        }
       }
-    }
-  };
+    };
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -336,8 +638,86 @@ Ensure that the question feels like a genuinely new exam experience.`;
     throw new Error(`Empty response content from Gemini candidate generation API.`);
   }
 
-  const parsedQuestion: GenQuestion = JSON.parse(textResponse);
-  return parsedQuestion;
+  const responseJson = JSON.parse(textResponse);
+
+  if (examType === 'tgat2') {
+    // Map TGAT2 schema to standard GenQuestion interface
+    const mappedQuestion: GenQuestion = {
+      difficulty: responseJson.difficulty,
+      topic: responseJson.subtopic || 'General',
+      section: responseJson.domain || 'General',
+      partTitle: `ส่วนที่ 2: การคิดอย่างมีเหตุผล (${responseJson.domain === 'Language Ability' ? 'ภาษา' : responseJson.domain === 'Numerical Ability' ? 'ตัวเลข' : responseJson.domain === 'Spatial Ability' ? 'มิติสัมพันธ์' : 'เหตุผล'})`,
+      suggestedTime: `Suggested Time: ${responseJson.estimatedTime}s`,
+      estimatedTime: responseJson.estimatedTime || 60,
+      frequency: responseJson.difficulty === 'Hard' ? 'Medium' : 'High',
+      examWeight: responseJson.difficulty === 'Hard' ? 7 : (responseJson.difficulty === 'Medium' ? 6 : 5),
+      yearPattern: '2568-2569',
+      text: responseJson.question || '',
+      passage: responseJson.passage || null,
+      options: [responseJson.choiceA, responseJson.choiceB, responseJson.choiceC, responseJson.choiceD, responseJson.choiceE].filter(Boolean),
+      answer: responseJson.answer === 'A' ? 0 : responseJson.answer === 'B' ? 1 : responseJson.answer === 'C' ? 2 : responseJson.answer === 'D' ? 3 : 4,
+      correctExplanation: responseJson.correctExplanation || '',
+      wrongExplanation: responseJson.wrongExplanation || '',
+      mindset: responseJson.trapPattern || '',
+      speedHack: `กลลวงที่ต้องระวัง: ${responseJson.trapPattern || 'วิเคราะห์ตรรกะแบบรอบคอบ'}`,
+      conceptTags: responseJson.subtopic || 'General',
+      reasoningType: responseJson.reasoningType || 'Logical',
+      scenarioType: responseJson.domain || 'General'
+    };
+    return mappedQuestion;
+  } else if (examType === 'tgat3') {
+    // Map TGAT3 schema to standard GenQuestion interface
+    const mappedQuestion: GenQuestion = {
+      difficulty: responseJson.difficulty,
+      topic: responseJson.subtopic || 'General',
+      section: responseJson.domain || 'General',
+      partTitle: `วิชา TGAT3 สมรรถนะการทำงาน (${responseJson.domain})`,
+      suggestedTime: `Suggested Time: ${responseJson.estimatedTime || 60}s`,
+      estimatedTime: responseJson.estimatedTime || 60,
+      frequency: responseJson.difficulty === 'Hard' ? 'Medium' : 'High',
+      examWeight: responseJson.difficulty === 'Hard' ? 7 : (responseJson.difficulty === 'Medium' ? 6 : 5),
+      yearPattern: '2568-2569',
+      text: responseJson.question || '',
+      passage: responseJson.passage || null,
+      options: [responseJson.choiceA, responseJson.choiceB, responseJson.choiceC, responseJson.choiceD].filter(Boolean),
+      answer: responseJson.answer === 'A' ? 0 : responseJson.answer === 'B' ? 1 : responseJson.answer === 'C' ? 2 : 3,
+      correctExplanation: responseJson.correctExplanation || '',
+      wrongExplanation: responseJson.wrongExplanation || '',
+      mindset: responseJson.mindset || '',
+      speedHack: responseJson.speedHack || '',
+      conceptTags: `${responseJson.subtopic || ''}, ${responseJson.questionType || ''}`,
+      reasoningType: responseJson.questionType || 'SingleAnswer',
+      scenarioType: responseJson.subtopic || 'General'
+    };
+    return mappedQuestion;
+  } else if (examType === 'tgat1') {
+    // Map TGAT1 schema to standard GenQuestion interface
+    const mappedQuestion: GenQuestion = {
+      difficulty: responseJson.difficulty,
+      topic: responseJson.subtopic || 'General',
+      section: responseJson.domain || 'General',
+      partTitle: `${responseJson.domain} - ${responseJson.questionType}`,
+      suggestedTime: `Suggested Time: ${responseJson.estimatedTime || 60}s`,
+      estimatedTime: responseJson.estimatedTime || 60,
+      frequency: responseJson.difficulty === 'Hard' ? 'Medium' : 'High',
+      examWeight: responseJson.difficulty === 'Hard' ? 7 : (responseJson.difficulty === 'Medium' ? 6 : 5),
+      yearPattern: '2568-2569',
+      text: responseJson.question || '',
+      passage: responseJson.passage || null,
+      options: [responseJson.choiceA, responseJson.choiceB, responseJson.choiceC, responseJson.choiceD].filter(Boolean),
+      answer: responseJson.answer === 'A' ? 0 : responseJson.answer === 'B' ? 1 : responseJson.answer === 'C' ? 2 : 3,
+      correctExplanation: responseJson.correctExplanation || '',
+      wrongExplanation: responseJson.wrongExplanation || '',
+      mindset: responseJson.mindset || '',
+      speedHack: responseJson.speedHack || '',
+      conceptTags: `${responseJson.subtopic || ''}, ${responseJson.questionType || ''}`,
+      reasoningType: responseJson.questionType || 'SingleAnswer',
+      scenarioType: responseJson.domain || 'General'
+    };
+    return mappedQuestion;
+  }
+
+  return responseJson;
 }
 
 // -------------------------------------------------------------------------
@@ -424,6 +804,97 @@ Format requirement: JSON output only.`;
   return JSON.parse(textResponse);
 }
 
+function getNextTargetDifficulty(history: any[], examType: string): string {
+  if (examType === 'tgat3') {
+    const tgat3History = history.filter(h => h.questionId && h.questionId.startsWith('T3-'));
+    const total = tgat3History.length;
+    if (total === 0) return 'Medium'; // default if empty
+
+    const easyCount = tgat3History.filter(h => h.difficulty === 'Easy').length;
+    const mediumCount = tgat3History.filter(h => h.difficulty === 'Medium').length;
+    const hardCount = tgat3History.filter(h => h.difficulty === 'Hard').length;
+
+    const easyPct = easyCount / total;
+    const mediumPct = mediumCount / total;
+    const hardPct = hardCount / total;
+
+    // Target: Easy 30% (0.3), Medium 50% (0.5), Hard 20% (0.2)
+    const easyDeficit = 0.3 - easyPct;
+    const mediumDeficit = 0.5 - mediumPct;
+    const hardDeficit = 0.2 - hardPct;
+
+    // Return the difficulty with the highest deficit to balance the distribution
+    if (easyDeficit >= mediumDeficit && easyDeficit >= hardDeficit) {
+      return 'Easy';
+    } else if (mediumDeficit >= easyDeficit && mediumDeficit >= hardDeficit) {
+      return 'Medium';
+    } else {
+      return 'Hard';
+    }
+  } else if (examType === 'tgat1') {
+    const tgat1History = history.filter(h => h.questionId && h.questionId.startsWith('T1-'));
+    const total = tgat1History.length;
+    if (total === 0) return 'Medium'; // default if empty
+
+    const easyCount = tgat1History.filter(h => h.difficulty === 'Easy').length;
+    const mediumCount = tgat1History.filter(h => h.difficulty === 'Medium').length;
+    const hardCount = tgat1History.filter(h => h.difficulty === 'Hard').length;
+
+    const easyPct = easyCount / total;
+    const mediumPct = mediumCount / total;
+    const hardPct = hardCount / total;
+
+    // Target: Easy 20% (0.2), Medium 55% (0.55), Hard 25% (0.25)
+    const easyDeficit = 0.2 - easyPct;
+    const mediumDeficit = 0.55 - mediumPct;
+    const hardDeficit = 0.25 - hardPct;
+
+    // Return the difficulty with the highest deficit to balance the distribution
+    if (easyDeficit >= mediumDeficit && easyDeficit >= hardDeficit) {
+      return 'Easy';
+    } else if (mediumDeficit >= easyDeficit && mediumDeficit >= hardDeficit) {
+      return 'Medium';
+    } else {
+      return 'Hard';
+    }
+  }
+
+  if (examType !== 'tgat2') {
+    // Default balanced logic for non-TGAT2/TGAT3/TGAT1
+    const roll = Math.random();
+    if (roll < 0.3) return 'Easy';
+    if (roll < 0.8) return 'Medium';
+    return 'Hard';
+  }
+
+  // Filter history for TGAT2
+  const tgat2History = history.filter(h => h.questionId && h.questionId.startsWith('T2-'));
+  const total = tgat2History.length;
+  if (total === 0) return 'Medium'; // default if empty
+
+  const easyCount = tgat2History.filter(h => h.difficulty === 'Easy').length;
+  const mediumCount = tgat2History.filter(h => h.difficulty === 'Medium').length;
+  const hardCount = tgat2History.filter(h => h.difficulty === 'Hard').length;
+
+  const easyPct = easyCount / total;
+  const mediumPct = mediumCount / total;
+  const hardPct = hardCount / total;
+
+  // Shifted Target: Easy 20% (0.2), Medium 50% (0.5), Hard 30% (0.3)
+  const easyDeficit = 0.2 - easyPct;
+  const mediumDeficit = 0.5 - mediumPct;
+  const hardDeficit = 0.3 - hardPct;
+
+  // Return the difficulty with the highest deficit to balance the distribution
+  if (easyDeficit >= mediumDeficit && easyDeficit >= hardDeficit) {
+    return 'Easy';
+  } else if (mediumDeficit >= easyDeficit && mediumDeficit >= hardDeficit) {
+    return 'Medium';
+  } else {
+    return 'Hard';
+  }
+}
+
 // -------------------------------------------------------------------------
 // Main Execution Flow
 // -------------------------------------------------------------------------
@@ -485,8 +956,12 @@ async function run() {
       console.log(`🤖 Generation Attempt #${attemptsCount} for question #${successCount + 1}`);
       console.log(`======================================================`);
 
-      // 2. Generate a candidate question
-      const candidate = await generateCandidate(examType, negativeConstraints);
+      // 2. Determine target difficulty to balance the database
+      const targetDifficulty = getNextTargetDifficulty(history, examType);
+      console.log(`🎯 Target difficulty selected for balance: ${targetDifficulty}`);
+
+      // Generate a candidate question
+      const candidate = await generateCandidate(examType, targetDifficulty, negativeConstraints);
       console.log(`💡 Candidate generated with topic: "${candidate.topic}" and difficulty: "${candidate.difficulty}"`);
       console.log(`Prompt Preview: ${candidate.text.slice(0, 100)}...`);
 
@@ -557,15 +1032,22 @@ async function run() {
       } else {
         console.log(`💾 Saving approved question to Google Sheets...`);
 
-        // Compute ID based on history size
+        // Compute ID based on target tab size to avoid duplicate IDs
         const prefix = examType === 'tgat2' ? 'T2' : (examType === 'tgat3' ? 'T3' : 'T1');
-        const nextNum = history.filter(h => h.questionId.startsWith(prefix)).length + 1;
+        const tabName = examType === 'tgat2' ? 'TGAT2_Questions' : (examType === 'tgat3' ? 'TGAT3_Questions' : 'TGAT1_Questions');
+        
+        console.log(`⏳ Fetching current rows of ${tabName} to determine next ID...`);
+        const currentTabResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId: SHEET_ID,
+          range: `${tabName}!A2:A1000`,
+        });
+        const currentTabRows = currentTabResponse.data.values || [];
+        const nextNum = currentTabRows.length + 1;
         const newId = `${prefix}-${String(nextNum).padStart(3, '0')}`;
         candidate.id = newId;
 
         // Save to specific Question Tab
         const nowStr = new Date().toISOString();
-        const tabName = examType === 'tgat2' ? 'TGAT2_Questions' : (examType === 'tgat3' ? 'TGAT3_Questions' : 'TGAT1_Questions');
         
         let targetRow: any[] = [];
         if (examType === 'tgat1') {
@@ -581,14 +1063,36 @@ async function run() {
           ];
         } else if (examType === 'tgat2') {
           targetRow = [
-            candidate.id, 'TGAT2', candidate.difficulty, candidate.topic, '', candidate.section,
-            candidate.partTitle, candidate.suggestedTime, candidate.estimatedTime,
-            candidate.frequency, candidate.examWeight, candidate.yearPattern,
-            candidate.text, candidate.passage || '',
-            candidate.options[0], candidate.options[1], candidate.options[2], candidate.options[3],
-            candidate.answer === 0 ? 'A' : (candidate.answer === 1 ? 'B' : (candidate.answer === 2 ? 'C' : 'D')),
-            candidate.correctExplanation, candidate.wrongExplanation, candidate.mindset,
-            candidate.speedHack, 'FALSE', 0, '', '', nowStr, candidate.reasoningType
+            candidate.id,
+            'TGAT2',
+            candidate.difficulty,
+            candidate.topic,
+            '', // subtopic
+            candidate.section,
+            candidate.partTitle,
+            candidate.suggestedTime,
+            candidate.estimatedTime,
+            candidate.frequency,
+            candidate.examWeight,
+            candidate.yearPattern,
+            candidate.text,
+            candidate.passage || '',
+            candidate.options[0] || '',
+            candidate.options[1] || '',
+            candidate.options[2] || '',
+            candidate.options[3] || '',
+            candidate.options[4] || '',
+            candidate.answer === 0 ? 'A' : (candidate.answer === 1 ? 'B' : (candidate.answer === 2 ? 'C' : (candidate.answer === 3 ? 'D' : 'E'))),
+            candidate.correctExplanation || '',
+            candidate.wrongExplanation || '',
+            candidate.mindset || '',
+            candidate.speedHack || '',
+            'FALSE', // isUsed
+            0, // usageCount
+            '', // lastUsedAt
+            '', // tags
+            nowStr, // createdAt
+            candidate.reasoningType || 'Logical'
           ];
         } else {
           targetRow = [

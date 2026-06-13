@@ -1740,5 +1740,34 @@ export const TGAT1_QUESTIONS: TGAT1Question[] = [
     "usageCount": 0,
     "lastUsedAt": null,
     "examCategory": "tgat1"
+  },
+  {
+    "id": "T1-061",
+    "difficulty": "Medium",
+    "topic": "Inference",
+    "section": "Reading Skill",
+    "partTitle": "Reading Skill - Reading Comprehension",
+    "suggestedTime": "Suggested Time: 90s",
+    "estimatedTime": 90,
+    "frequency": "High",
+    "examWeight": 6,
+    "yearPattern": "2568-2569",
+    "text": "Based on the passage, what is the main implication of 'performative availability' among remote workers?",
+    "passage": "The shift to remote work was heralded as the ultimate liberation from the rigid constraints of the nine-to-five office routine. However, it has paradoxically birthed a new corporate malady: digital presenteeism. Unlike its physical predecessor—where employees simply sat at their desks while unproductive—digital presenteeism compels remote workers to remain constantly visible online. Employees feel an unspoken pressure to instantly reply to emails at midnight, leave green 'active' status indicators on communication apps throughout the weekend, and attend redundant virtual meetings just to prove their dedication. Experts warn that this performative availability does not translate to genuine productivity; instead, it fosters a culture of superficial engagement while driving burnout rates to unprecedented heights. Until companies measure performance by actual output rather than digital footprint, the boundary between professional obligation and personal life will continue to dissolve.",
+    "options": [
+      "Employees find creative ways to balance their personal lives with their professional tasks.",
+      "Workers focus on projecting the appearance of being busy rather than focusing on high-quality output.",
+      "Managers are able to accurately measure actual productivity through real-time online status indicators.",
+      "Remote working conditions have successfully eliminated the traditional stresses of physical offices."
+    ],
+    "answer": 1,
+    "correctExplanation": "The phrase 'performative availability' refers to employees engaging in actions to show they are 'visible' and 'active' online (such as replying at midnight or keeping indicators green) to prove dedication, which the author describes as leading to 'superficial engagement' rather than 'genuine productivity.' This implies workers are focusing on the appearance of working (performing) rather than actual results.",
+    "wrongExplanation": "Choice A is incorrect because the passage states the boundary between personal and professional life is actually dissolving, not being balanced. Choice C is incorrect because the passage explicitly states that performative availability does not translate to genuine productivity and criticizes measuring performance by 'digital footprint.' Choice D is incorrect because remote work has introduced a new malady (digital presenteeism) and driven burnout to unprecedented heights, rather than eliminating stress.",
+    "mindset": "Identify implied meanings by looking at the author's choice of adjectives ('performative', 'superficial') and contrast words ('paradoxically', 'instead of') to avoid falling for literal or overly optimistic distractors.",
+    "speedHack": "Scan for the key phrase 'performative availability' in the text. Read the immediate sentence containing it and the following clause: 'does not translate to genuine productivity; instead, it fosters a culture of superficial engagement'. This directly matches 'projecting the appearance of being busy' (superficial/performative) over 'high-quality output' (genuine productivity).",
+    "isUsed": false,
+    "usageCount": 0,
+    "lastUsedAt": null,
+    "examCategory": "tgat1"
   }
 ];
