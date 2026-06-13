@@ -9,7 +9,7 @@
     "dev": "next dev -p 3001",
     "sync-sheets": "npx tsx scripts/syncSheets.ts",
     "setup-sheets": "npx tsx scripts/setupSheets.ts",
-    "build": "npm run sync-sheets && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "validate": "node scripts/validateQuestions.js",
