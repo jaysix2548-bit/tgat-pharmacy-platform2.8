@@ -3,7 +3,7 @@ import { getGoogleSheetsClient } from '@/lib/googleSheets';
 import fs from 'fs';
 import path from 'path';
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const getSheetId = () => process.env.GOOGLE_SHEET_ID;
 
 function cleanCell(val: any): string {
   if (val === undefined || val === null) return '';
@@ -13,7 +13,7 @@ function cleanCell(val: any): string {
 async function fetchTabQuestions(sheets: any, tabName: string) {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
+      spreadsheetId: getSheetId(),
       range: `${tabName}!A1:AZ1000`,
     });
 
@@ -125,7 +125,7 @@ async function fetchTabQuestions(sheets: any, tabName: string) {
 async function fetchTabChapters(sheets: any) {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
+      spreadsheetId: getSheetId(),
       range: 'Study_Chapters!A1:Z100',
     });
 
@@ -196,7 +196,8 @@ async function handleSync(request: Request) {
     );
   }
 
-  if (!SHEET_ID) {
+  const sheetId = getSheetId();
+  if (!sheetId) {
     return NextResponse.json(
       { success: false, error: 'GOOGLE_SHEET_ID is not configured in .env.local.' },
       { status: 500 }
@@ -208,7 +209,7 @@ async function handleSync(request: Request) {
     
     // Fetch spreadsheet metadata to see available tabs
     const metadataResponse = await sheets.spreadsheets.get({
-      spreadsheetId: SHEET_ID,
+      spreadsheetId: sheetId,
     });
     const availableTabs = metadataResponse.data.sheets?.map((s: any) => s.properties?.title) || [];
 

@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { getGoogleSheetsClient } from '@/lib/googleSheets';
 import crypto from 'crypto';
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-
 export async function POST(request: Request) {
+  const SHEET_ID = process.env.GOOGLE_SHEET_ID;
   if (!SHEET_ID) {
     return NextResponse.json(
       { success: false, error: 'GOOGLE_SHEET_ID is not configured in .env.local' },
