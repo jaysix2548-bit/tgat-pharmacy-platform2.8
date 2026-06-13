@@ -14,6 +14,15 @@ export async function getGoogleSheetsClient() {
     );
   }
 
+  // Trim and format email address to prevent hidden trailing space or quote issues
+  let formattedEmail = email.trim();
+  if (formattedEmail.startsWith('"') && formattedEmail.endsWith('"')) {
+    formattedEmail = formattedEmail.slice(1, -1);
+  } else if (formattedEmail.startsWith("'") && formattedEmail.endsWith("'")) {
+    formattedEmail = formattedEmail.slice(1, -1);
+  }
+  formattedEmail = formattedEmail.trim();
+
   // Trim first to handle any trailing spaces/newlines from the environment
   let formattedPrivateKey = privateKey.trim();
   
@@ -36,7 +45,7 @@ export async function getGoogleSheetsClient() {
   }
 
   const auth = new google.auth.JWT({
-    email,
+    email: formattedEmail,
     key: formattedPrivateKey,
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
   });
