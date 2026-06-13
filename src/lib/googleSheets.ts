@@ -14,13 +14,21 @@ export async function getGoogleSheetsClient() {
     );
   }
 
-  // Replace escaped newline characters in private key to support both single-line and multi-line env var values
-  let formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+  // Trim first to handle any trailing spaces/newlines from the environment
+  let formattedPrivateKey = privateKey.trim();
   
-  // Strip outer quotes if Next.js loaded them literally
+  // Strip outer quotes if they exist
   if (formattedPrivateKey.startsWith('"') && formattedPrivateKey.endsWith('"')) {
     formattedPrivateKey = formattedPrivateKey.slice(1, -1);
+  } else if (formattedPrivateKey.startsWith("'") && formattedPrivateKey.endsWith("'")) {
+    formattedPrivateKey = formattedPrivateKey.slice(1, -1);
   }
+
+  // Replace escaped newline characters in private key to support both single-line and multi-line env var values
+  formattedPrivateKey = formattedPrivateKey.replace(/\\n/g, '\n');
+  
+  // Trim again to ensure no leading/trailing blank lines after replacing \n
+  formattedPrivateKey = formattedPrivateKey.trim();
 
   // Double check the format (without printing the actual sensitive contents)
   if (!formattedPrivateKey.includes('-----BEGIN PRIVATE KEY-----')) {
