@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getGoogleSheetsClient } from '@/lib/googleSheets';
+import { getGoogleSheetsClient, getGoogleSheetId } from '@/lib/googleSheets';
 import fs from 'fs';
 import path from 'path';
 
-const getSheetId = () => process.env.GOOGLE_SHEET_ID;
+const getSheetId = () => getGoogleSheetId();
 
 function cleanCell(val: any): string {
   if (val === undefined || val === null) return '';

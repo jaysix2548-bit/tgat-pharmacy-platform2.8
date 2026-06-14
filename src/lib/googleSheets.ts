@@ -54,3 +54,21 @@ export async function getGoogleSheetsClient() {
 
   return google.sheets({ version: 'v4', auth });
 }
+
+/**
+ * Returns a cleaned and formatted Google Sheet ID from environment variables,
+ * stripping any surrounding quotes and trailing/leading whitespaces.
+ */
+export function getGoogleSheetId(): string {
+  const id = process.env.GOOGLE_SHEET_ID;
+  if (!id) return '';
+  
+  let formattedId = id.trim();
+  if (formattedId.startsWith('"') && formattedId.endsWith('"')) {
+    formattedId = formattedId.slice(1, -1);
+  } else if (formattedId.startsWith("'") && formattedId.endsWith("'")) {
+    formattedId = formattedId.slice(1, -1);
+  }
+  
+  return formattedId.trim();
+}
